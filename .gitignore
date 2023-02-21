@@ -29,6 +29,8 @@
 *.out
 *.nlg
 *.synctex.gz
+*.bcf
+*.run.xml
 
 # Ignore Mac IDE files
 *.swp
