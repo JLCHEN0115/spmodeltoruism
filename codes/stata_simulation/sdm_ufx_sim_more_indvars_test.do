@@ -83,6 +83,7 @@ reshape wide income price epsilon zeta_1 zeta_2, i(unit) j(period);
 
 ************************************;
 *4)create the contiguity weighting matrix W;
+* assume our units are in an unconnected line;
 ************************************;
 matrix W = J(150, 150, .);
 forvalues i = 1/150 {;
@@ -101,7 +102,7 @@ matrix list W;
 
 ************************************;
 *5)Data Generating Process;
-*Sparial Durbin Model (SDM);
+*Sparial Durbin Model (SDM) in the reduced form;
 *y_t = (I-rho*W)^-1 (X_t*b+theta*W*X_t + mu + gamma + epsilon);
 ************************************;
 local rho = 0.5;

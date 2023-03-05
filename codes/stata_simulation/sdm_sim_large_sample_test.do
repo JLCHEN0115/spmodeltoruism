@@ -101,7 +101,7 @@ matrix list W;
 
 ************************************;
 *5)Data Generating Process;
-*Sparial Durbin Model (SDM);
+*Sparial Durbin Model (SDM) in reduced form;
 *y_t = (I-rho*W)^-1 (X_t*b+theta*W*X_t + mu + gamma + epsilon);
 ************************************;
 local rho = 0.5;
