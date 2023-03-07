@@ -131,6 +131,14 @@ xtset unit period;
 xsmle arrival income price, wmat(W) model(sdm) fe type(ind) nsim(500) nolog;
 
 
+*************************;
+* other trials;
+*************************;
+*1) what are the variance-covariance matrix of y?;
+* What if the units are connected by a torus structure?;
+* Especially, what are the variance-covariance matrix of y in different structrue?;
+
+*2) Draw the Moran I plot;
 
 
 
