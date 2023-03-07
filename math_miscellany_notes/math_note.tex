@@ -24,6 +24,10 @@
 \newcommand*\circled[1]{\tikz[baseline=(char.base)]{
 		\node[shape=circle,draw,inner sep=1pt] (char) {#1};}} % circled numbers
 \usepackage{float}%do not auto repositioning
+\usepackage[style=apa, eprint=false]{biblatex} %Imports biblatex package
+\raggedright
+\addbibresource{specms.bib} %Import the bibliography file
+
 % $\uppercase\expandafter{\romannumeral1}$ Roman numeral
 %	\begin{figure}[hbt]
 	%{\centering \includegraphics[scale=0.78]{ring_algebra_semi}}
@@ -31,14 +35,119 @@
 	%\end{figure}
 % \usepackage[style=apa, eprint=false]{biblatex} %Imports biblatex package
 % \addbibresource{name_of_bib.bib} %Import the bibliography file
-	
+
 \begin{document}
 \title{Math Notes}
 \author{Jialiang Chen} 
 \date{\today}
-		
 \maketitle
+\tableofcontents
 
-% \printbibliography %Prints bibliography
+\section{Spatial Stochastic Process}
+There are three approaches to embed a spatial structure in our stochastic process analysis. They are direct representations, non-parametric functions and spatial process models. The spatial process models could be simultaneous models and conditional models. They are very distinct models. 
+
+The simultaneous models is a model for the complete pattern, so we have the endogeneous variables $y$ on the left-hand side, and the exogenous variables $X$ on the right-hand side. We want to explain the variable $y$ at all locations being explained simultaneously. The conditional models are mainly for prediction or priors for parameters in Bayesian hierarchical models. It is very common in literature that people explaining simultaneous models using the conditional language, which is not appropriate.
+
+\subsection{Simultaneous Spatial Process Models}\hfill\par 
+The variance-covariance matrix comes from the spatial random process you specify. For example, in the (Simultaneous) Spatial Autoregressive Process, we have the reduced form expression
+\[	y = (I - \rho W)^{-1}u.	\]
+It follows that (assuming $\mathbb{E}[y] = 0$)
+\[	\begin{aligned}
+	\operatorname{Var}(y) &= \mathbb{E}[yy']\\
+	&= \mathbb{E}[(I - \rho W)^{-1}uu'(I-\rho W')^{-1}] \\
+	&= (I - \rho W)^{-1}\mathbb{E}[uu'](I-\rho W')^{-1}.
+\end{aligned}	\]
+Therefore, 
+\[		\operatorname{Var}(y)  = \sigma^{2} [ (I - \rho W)'(I - \rho W)]^{-1}	\]
+under the assumption of homoskedasticty $\operatorname{Var}(u_{i}) = \sigma$ and independence.
+
+\subsection{Conditional Spatial Process Models}\hfill\par 
+The general idea is that we want to get the joint distribution $(y_{1}, y_{2}, \dots, y_{n})$ from the conditional distributions $y_{i} \mid y_{-i}$ by a process called \textit{factorization}, which is a product of the conditional and marginal distributions. 
+
+This is not hard in time series. We have the Markov Property in time to simplify the factorization. In space, however, building a joint distribution from conditionals  does not necessarily work. We we specify distribution conditional on neighbors, and call these the \textit{Markov Random Field (MRF)}. The Hammersley-Clifford Theorem builds the connection between MRF and the joint distribution to make sure that our Markov Random Field defines a unique joint distribution, under certain (pretty restrictive) conditions. The reverse of this process is called the \textbf{Gibbs Sampling}. It should be noted that most of the time, the resulting joint distribution is \textit{not} a multivariate version of the conditionals, unless we are in the Gaussian world. 
+
+\section{Specification of Spatial Dependence}
+The spatial lag model and the spatial error models are the most common ways to specify the spatial dependence. There are also some other specifications. For example, the spatial Durbin model and the SLX models. However, these models should be taken with a grain of salts. 
+
+$\bullet$ Be aware of the inverse problem. Different processes can yield the same pattern. For example, the heteroskedasticity in the variance-covariance matrix of $y$ could be the result of the `true' heteroskedasticity  in the error term $u$, or could be the result of uneven number of neighbors in the weighting matrix. It is usually hard to look back and infer what is the origin of the pattern. 
+
+$\bullet$ There are some motivations for specifying the spatial dependence structure. However, there are also a lot of ad-hoc maneuvers. Need more theory to address these problems. The new economic geography critique by \textcite{gibbonsMostlyPointlessSpatial2012}. It is difficult to interpret causal effects.
+
+\subsection{The Mixed Regressive-Spatial Autoregressive Model}\hfill\par 
+The model is specified as 
+\[	y = \rho Wy + X \beta + u, 	\]
+where $Wy$ is the spatial autoregressive (spatial lag) term, $X$ is the regressive term and $\rho$ is the spatial autoregressive coefficient. We could write it as 
+\[	(I-\rho W) y = X \beta + u.	\]
+
+You could think $(I-\rho W)$ as a spatial filter, which adjusts for spatial correlation. This provides another, more practical reason for including the spatial structure than the behavior motivations. If $y_{i}$ are highly spatially correlated, there would not be enough variations for statistical analysis. We like variations, and $(I-\rho W)$ is a spatial filter that adjusts for it. (We still need to estimate $\rho$. )
+
+The \textbf{Spatial Multiplier} is derived from the reduced form. We have 
+\[	\begin{aligned}
+	\mathbb{E}[y \mid \triangle X] &= (I-\rho W)^{-1}(\triangle X)\beta \\
+	&= [I + \rho W + \rho^{2}W^{2} + \dots ] (\triangle X) \beta. 
+\end{aligned}	\]
+
+It is intuitive to see the multiplier effect by writing $(I-\rho W)^{-1}$ as a series. 
+
+The total effect of a change in $X$ is $ (I-\rho W)^{-1}(\triangle X)\beta$, the direct effect is defined as $(\delta X) \beta$, and the indirect effect is defined as $[(I-\rho W)^{-1} - I](\triangle X) \beta$, or $[\rho W + \rho^{2}W^{2} + \dots ] (\triangle X) \beta$.
+
+We could apply the spatial multiplier in policy analysis and to simulate the spatial imprint of a policy change by sollving the reduced form for a change in $X$. Read Valuing Access To Water - A Spatial Hedonic Approach Applied To Indian Cities by \textcite{anselinValuingAccessWater2008}.
+
+The misspecification of the spatial lag model is basically a disaster. It is a omitted variable problem, which leads to biased and inconsistent results, and also larger standard deviations (so don't say I am not interested in inference, it also matters if you only want to see the overall result). 
+
+\subsection{Spatial Error Model}
+This model is not very interesting, as there is no substantive interpretation. An error is just an error. If there are spatial patterns in the error term, we extend our specification as far as we can, either by including new exogeneous variables, or by imposing structures on the error terms. 
+
+The model is 
+\[	y = X\beta + u	\]
+with $u = \lambda Wu + e$.
+
+The reduced form is 
+\[	y = X\beta + (I-\lambda W)^{-1}e.	\]
+
+Notice that there is simply no substantive multiplier effect. The only spatial effect is on the error term, which disappears on average. This model could be used for \textit{kriging} (spatial prediction).
+
+The misspecification (consequence of ignoring SAR errors) is not that severe. The OLS remains unbiased, but it is not efficient. 
+
+\subsection{Spatial Durbin Model}\hfill\par 
+The spatial Durbin model has been widely used, but many of them are for wrong reasons (or, no reason). 
+\subsubsection{The Classic Spatial Durbin Model}\hfill\par 
+The point here is, the Classic Spatial Durbin Model is equivalent to the Spatial Error model. We start with rewriting a SAR model. 
+\[	y  = X\beta + u 	\]
+with $u = \lambda W u + e$. 
+By substitution, we have 
+\[	y = X\beta + (I-\lambda W)^{-1}e.	\]
+Pre-multiply $(I-\lambda W)$ on both sides of the equation gives us
+\[	(I-\lambda W)y = (I-\lambda W)X\beta + e.	\]
+
+This is a spatially filtered variable regression (spatially filtered $y$ and $x$).
+
+Now, we rewrite this equation as 
+\begin{equation}\label{sdm}
+	y = \lambda W y + X \beta - \lambda WX \beta + u.
+\end{equation}
+
+This is called the Classic Spatial Durbin Model. It is a non-linear model in $\lambda$ and $\beta$. Note that the coefficient on $WX$ is just the negative of the multiplication of the coefficients on $Wy$ and $X$. This gives us $k-1$ tests naturally, which is called the \textit{Common Factor Hypothesis}, and could be used to test if the SDM is an appropriate specification. (More on this later.)
+
+Note that if we cannot reject $H_{0}: \lambda = 0$, then we are back to the standard regression model.
+
+Note that the constant term is not \textit{separately identifiable}. The constant terms in $X$ is a column of $1$s. Note that the spatially lagged column of $1$s is not changed. The resulting constant term in this model is $(1-\lambda) \beta_{0}$. We can only identify this product, but not separately $\lambda$ and $\beta_{0}$. 
+
+\subsubsection{The Unconstrained Spatial Durbin Model}\hfill\par 
+Somehow, people started estimating
+\[	y = \gamma_{1}Wy + X\gamma_{2} + WX\gamma_{3} + u,	\]
+which is totally fine. But it is important to realize that the \textit{common factor hypothesis} is still there. We can test for the null hypothesis (scalar multiplication here, $\gamma_{1} \in \mathbb{R}$ and $\gamma_{2}, \gamma_{3} \in \mathbb{R}^{k}$.)
+\[	\operatorname{H_{0}}:\quad \gamma_{1} \gamma_{2} = -\gamma_{3}.	\]
+We are in an awkward place here. If $H_{0}$ is \textit{not} rejected, then we are in equation (\ref{sdm}), which is nothing but the SAR error model. \emph{And recall that, there is no multiplier effect in the error model.} If the $H_{0}$ is rejected, the problem is we do not know where to go - we have different interpretations. We know that this is not an SAR error process, but if we also reject $H_{0}: \gamma_{3} = 0$, this does not imply the spatial lag model. This means that these models are not nested here. 
+
+The reduced form is 
+\[	y = (I-\gamma_{1}W)^{-1}X\gamma_{2} + (I-\gamma_{1}W)^{-1}WX\gamma_{3} + v,	\]
+where $x = (I-\gamma_{1}W)^{-1}u$.
+
+Now, to look for the direct and indirect effect, we expand the inverse term out, and get
+\[	y = (I + \gamma_{1}W + \gamma_{1}^{2}W^{2} + \dots )X\gamma_{2} + (I+\gamma_{1}W + \gamma_{1}^{2}W^{2} + \dots )WX\gamma_{3} + v.	\]
+
+This is by no means simple. Note that a change in $X$ has multiple spatial effects. It is argued that the spatially lagged model already has $WX$ in it, so by adding $WX$ in addition to $Wy$, we have it twice. There should be a reason why it should be there twice. This makes the interpretation of the direct and indirect effects very complicated. 
+\printbibliography %Prints bibliography
 		
 \end{document}
