@@ -148,6 +148,134 @@ Now, to look for the direct and indirect effect, we expand the inverse term out,
 \[	y = (I + \gamma_{1}W + \gamma_{1}^{2}W^{2} + \dots )X\gamma_{2} + (I+\gamma_{1}W + \gamma_{1}^{2}W^{2} + \dots )WX\gamma_{3} + v.	\]
 
 This is by no means simple. Note that a change in $X$ has multiple spatial effects. It is argued that the spatially lagged model already has $WX$ in it, so by adding $WX$ in addition to $Wy$, we have it twice. There should be a reason why it should be there twice. This makes the interpretation of the direct and indirect effects very complicated. 
+
+\section{Specification of Spatial Heterogeneity}\hfill\par 
+\subsection{Spatial Regimes}\hfill\par 
+\subsubsection{Heterogeneity in the intercepts}
+$\bullet$ Varying intercepts. The standard $t-$tests are not correct in the presence of spatial autocorrelation. In order to fix that problem, we could turn the tests (e.g., the ANOVA tests) into regression forms by adding indicator variables for each regimes, which is equivalent to the original tests, and then incorporate spatially lagged variables if necessary (as suggested by specification tests). 
+
+$\bullet$ Spatial fixed effects. Usually in muli-level specification, for example, the units in census tracts. We include a reference mean $\alpha$ and the differences by regimes in the regression as follows
+\[	y_{ij} = \alpha + \alpha_{2}d_{i2} + \dots + \alpha_{G}d_{iG} + x_{i}'\beta + \epsilon_{ij}.	\]
+Note that if we include the spatial fixed effects, then we do not want to include the tract level variables as it would be superfluous. A common misconception in the literature is that spatial fixed effects "fix" the spatial autocorrelation. It only does for very specific cases. And those cases are pretty unlikely to hold. However, in some cases, after introducing the spatial fixed effects, there is no more evidence of residual spatial autocorrelation. So it has been "fixed". This is more of an empirical matter rather than a general rule. 
+
+\subsubsection{Full Heterogeneity: Full Spatial Regimes}
+This basically boils down to running a separate model in each of the subsets. The classical setup is 
+\[	\begin{bmatrix}
+	y_{1}\\
+	y_{2}
+\end{bmatrix} = \begin{bmatrix}
+X_{1} & 0 \\
+0 & X_{2}
+\end{bmatrix} 
+\begin{bmatrix}
+	\beta_{1} \\
+	\beta_{2}
+\end{bmatrix} + 
+\begin{bmatrix}
+	\epsilon_{1}\\
+	\epsilon_{2}
+\end{bmatrix}.	\]
+If there are no correlations across regimes, then it is better to write two regression equations instead.
+
+\subsection{Testing for Spatial Heterogeneity}
+ Our null hypothesis is equal intercepts and equal slopes.  The classical test on structural stability in econometrics is the Chow test \footnote{The Chow test is named after the Chinese-American economist Zhizhuang Zou.}. The basic idea is comparing two models - the restricted model and the unrestricted model. "Restricted" means you restrict some coefficients to be zero, and the "unrestricted" can be any number. Therefore, the restricted is always the simpler model. In our context, the "restricted" means all the coefficients are the same everywhere, and the "unrestricted" means flexibility for each of the subsets. 
+ 
+ We could generalize the Chow test for a general test on coefficient variability. As an example, suppose we run two separate regressions for the regimes and get a full vector for the estimands $\beta' = (\beta_{11} \beta_{12} \beta_{13} \beta_{21} \beta_{22} \beta_{23})'$. We supply a matrix $R$, for example, specified as 
+ \[	R  = \begin{bmatrix}
+ 	1 & 0 & 0 & -1 & 0 & 0 \\
+ 	0 & 1 & 0 & 0 & -1 & 0 \\
+ 	0 & 0 & 1 & 0 &  0 & -1
+ \end{bmatrix}.	\]
+Then our null hypothesis would be 
+\[	H_{0}: R\beta = 0.	\]
+
+This is a chi-square statistic ( a generalized Wald test), following the distribution 
+\[	(R\hat{\beta})'[RVR']^{-1}(R\hat{\beta}) \sim \chi^{2}(G),	\]
+where $V$ is the variance-covariance matrix of the $\hat{\beta}$. The tricky part lies on the identification of $V$. 
+
+Note that this is perfectly flexible. You can test if $\beta_{12} = 2 \beta_{22}$ easily for example. Also, as long as you can come up with the $V$, no matter it comes from the spatial autoregressive model or the spatial lag error model.
+
+\subsection{Spatial Regimes with Spatial Dependence}
+We know how to deal with the regression coefficients part, but how should we deal with the spatial part? Do we keep the spatial process the same throughout? There is no clear direction except for simplicity. 
+
+The spatial econometrics is based on asymptotics, and we need to think about the issue of whether the limit process stops at the border between regimes. Do not change the process unless you have a strong foundation. 
+
+We have the two-regime spatial lag model with fixed spatial autoregressive coefficient
+\[	\begin{bmatrix}
+	y_{1}\\
+	y_{2}
+\end{bmatrix} = \rho W
+\begin{bmatrix}
+	y_{1}\\
+	y_{2}
+\end{bmatrix} + 
+\begin{bmatrix}
+	X_{1} & 0 \\
+	0 & X_{2}
+\end{bmatrix} 
+\begin{bmatrix}
+	\beta_{1}\\
+	\beta_{2}
+\end{bmatrix} + 
+\begin{bmatrix}
+	\epsilon_{1}\\
+	\epsilon_{2}
+\end{bmatrix}.	\]
+
+The two-regime spatial lag model with varying spatial autoregressive coefficient is 
+\[	\begin{bmatrix}
+	y_{1}\\
+	y_{2}
+\end{bmatrix} = 
+\begin{bmatrix}
+	\rho_{1}W_{1} & 0 \\
+	0 & \rho_{2}W_{2}
+\end{bmatrix}
+\begin{bmatrix}
+	y_{1}\\
+	y_{2}
+\end{bmatrix} + 
+\begin{bmatrix}
+	X_{1} & 0 \\
+	0 & X_{2}
+\end{bmatrix} 
+\begin{bmatrix}
+	\beta_{1}\\
+	\beta_{2}
+\end{bmatrix} + 
+\begin{bmatrix}
+	\epsilon_{1}\\
+	\epsilon_{2}
+\end{bmatrix}.	\]
+Note that there is no spillover between the two regimes. Similarly for the spatial error model.
+
+\subsection{Spatially Varying Coefficients}\hfill\par 
+\subsubsection{Expansion Method}
+One way to deal with varying coefficients is by imposing structures on the coefficients. The initial model would be 
+\[	y_{i} = \alpha + x_{i}\beta_{i} + \epsilon_{i}.	\]
+Note the extreme heterogeneity here. This is an incidental parameter problem. We have the expansion equation
+\[	\beta_{i} = \gamma_{0} + z_{i1}\gamma_{1} + z_{i2}\gamma_{2}.	\]
+Some algebra shows that 
+\[	y_{i} = \alpha + x_{i}\gamma_{0} + (z_{i1}x_{i})\gamma_{1} + (z_{i2}x_{i})\gamma_{2} + \epsilon_{i}.	\]
+We ended up with a equation with interaction effects. We should be aware of the multicollinearity problem and the danger of overfitting. We can also let random error presents in the expansion equation
+\[\beta_{i} = \gamma_{0} + z_{i1}\gamma_{1} + z_{i2}\gamma_{2} + \psi_{i}\]
+and get the random expansion model.
+
+\subsubsection{Geographically Weighted Regression}\hfill\par 
+This is a special case of local regression. Local regression is about the attribute spaces, the space of variables $y$ and $x$s.  GWS is about the geographical space. Classical local regression exploits local subsets in the attribute dimensions, GWS exploits local subsets of the attribute, but in geographic space. The parameter values are obtained from a subset of observations using kernel regression. 
+
+Suppose we are interested in the conditional expectation, i.e., the regression. For a simple bivariate regression, we have 
+\[	y_{i} = m(x_{i}) + u_{i},	\]
+where $m$ is an unspecified functional form. The kernel regression would be 
+\[	m(x_{0}) = \sum_{i} K[(x_{i} - x_{0})/h] y_{i},	\]
+where $K$ is our kernel function, and $h$ is the bandwidth. This is the classic kernel regression.
+
+In the GWR setup, local estimation is based on nearby locations. But note that our local estimation is now based on the $x-y$ pairs at nearby locations. This give us a difficulty for interpretation - there is simply no asymptotics by adding more units in the nearby locations. Mathematically, we have 
+\[	b(u_{i}, v_{i}) = [X'W(u_{i}, v_{i})X]^{-1}X'W(u_{i}, v_{i})y,	\]
+where $W(u_{i}, v_{i})$ is a matrix with weights in the diagonal elements.
+
+ 
+
 \printbibliography %Prints bibliography
 		
 \end{document}
