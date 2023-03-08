@@ -330,7 +330,7 @@ $\bullet$ \textit{The invariance property} Note that the expected value of a fun
 
 In spatial econometrics, because of the dependency of data, things are very complicated. This requires specialized laws of large numbers and central limit theorem. See the next section.
 
-\subsubsection{ML Estimator of Spatial Lag Model}\hfill\par 
+\subsection{ML Estimator of Spatial Lag Model}\hfill\par 
 The main issue with the spatial lag model is the endogeneity. Specifically, the spatially lagged $y$ is directly correlated with the error term. The only way we can do this is to have a formal model for the randomness in this process. Remember that our model is 
 \[	y = \rho Wy + X\beta + e.	\]
 Note that the randomness is in the error term. So the randomness in $y$ is only because of the randomness in the error term. Therefore, we make assumptions about the parametric model for the randomness in the error term. Typically, we assume a multivariate normal distribution (multivariate because these things are dependent, so we have to work with the whole thing in one shot). So $e \sim \mathscr{N}(0, \sigma^{2}I)$. We get the randomness for the $y$ as a transformation from the randomness in the error terms. 
@@ -364,10 +364,81 @@ and the asymptotic variance is just the inverse of it (and there is no analytica
 
 The important thing to notice that the precision of the parameters of the error term ($\sigma$ is one of them) affects the precision of the $\rho$. This is a fundamental difference between pretty much anything in standard econometrics. This is peculiar in the spatial econometrics. 
 
+Then the asymptotic variance matrix is just the inverse of the information matrix, but there is no analytical expression. But it is not block-diagonal between $\rho$ and $\sigma^{2}$. For a feasible generalized least square estimator, we only need a consistent estimator of the error parameter and it does not need to be efficient because the efficiency does not matter (it is block-diagonal). We will come back to t his when we talk about methods of moments later on. 
 
+\subsubsection{Predicted Values and Residuals}\hfill\par 
+The predicted value from structural form is not valid. We need to use the reduced form 
+\[	\mathbb{E}[y \mid X] = (I - \rho W)^{-1}X \beta = (I + \rho W + \rho^{2}W^{2} + \dots) X \beta.	\]
 
+As for the residuals, the naive residual would be 
+\[	u = y - \rho W y - X \beta = (I - \rho W)y - X \beta.	\]
+This is fine, and it is actually the one being used in the specification tests.
 
+The other way to get residuals is to use the reduced form, which gives
+\[	u = y - (I - \rho W)^{-1}X\beta.	\]
 
+\subsection{Maximum Likelihood Estimation of the Error Models}
+
+We use the Spatial Autoregressive Error model for illustration and for simplicity. We have 
+\[	e = \lambda We + u.	\]
+
+The non-spherical variance matrix for the error term is 
+\[	\Sigma = \sigma^{2}[(I-\lambda W)'(I - \lambda W)]^{-1}.	\]
+
+The SAR error model is simpler since there is an inverse in the $\Sigma$. Therefore, the inverse variance-covariance matrix $\Sigma^{-1}$ (used in the Generalized Least Squares) does not contain inverse terms anymore.
+
+$\lambda$ here is a nuisance parameter, which means that it is not of the direct interest of itself, but important in estimation of $\beta$. This is actually the problem of efficiency as our $\beta$ remains unbiased under misspecification as we haven seen before. 
+
+$\bullet$ Generalized least squares methods, aka Spatially Weighted Least Squares here.
+We have the Generalized Least Squares Estimator
+\[ b_{GLS} = [X'\Sigma^{-1}X]^{-1} X'\Sigma^{-1}y. \]
+
+By substituting $\Sigma^{-1} = 1/\sigma (I-\lambda W)'(I - \lambda W)$, we get the Spatially Weighted Least Squares estimator
+\[	b_{SWLS} = [X'  (I-\lambda W)'(I - \lambda W) X]^{-1} X'  (I-\lambda W)'(I - \lambda W) y = [X_{L}'X_{L}]^{-1}X_{L}^{'}y_{L},	\]
+where $X_{L} := (I-\lambda W)X$ and $y_{L} := (I-\lambda W)y$ are spatially filtered  variables. 
+
+The last expression should be familiar to you. If we knew $\lambda$, then we are back to OLS.
+
+Now, the main business is to get $\lambda$. Unfortunately, we have to go through the whole process of the MLE. We assume the normality of error terms, and that yields the normality of the dependent variable, then we spell out the likelihood function, and do the optimization problem to get a consistent estimate for $\lambda$. There is no shortcut. 
+
+The log-likelihood function is 
+\[	\ln L = -(n/2)\ln(2\pi) - (n/2) \ln \sigma^{2} + \ln |I -\lambda W| - e_{L}e_{L}^{'}/(2\sigma^{2}),	\]
+where $e_{L} = (I-\lambda W) (y - X\beta)$, and $ |I -\lambda W| $ is our Jacobian.
+
+We also need to resort to numerical optimization to find parameter values that yield $\max \ln L$.
+
+We can also turn the optimization problem to a single parameter optimization problem as we did before. 
+
+Some software do not bother with the variance of $\lambda$, as it is complicated (mostly due to the inverse). But there are ways for inference to get around of this. (More on this later.)
+
+It should be noted that the asymptotic variance matrix is black diagonal in this case. There is no correlation between the ($\lambda$  $\sigma^{2}$) and $\beta$. For feasible generalized least squares, all we need is a consistent estimate for the nuisance parameter.  At the end of the day, the precision of $\lambda$ does not affect that of $\beta$.
+
+\subsubsection{Predicted Values and Residuals}\hfill\par 
+There is no effect of error variance on point estimates, but the effect is on precisiion of estimate. 
+
+The residuals are a little confusing, the unfiltered is $u = y - X \beta$, and you will find that there are some spatial correlation. They are indeed. The filtered one $u = (I-\lambda W) y - (I -\lambda W) X\beta$. 
+
+\subsection{Model Comparison}\hfill\par 
+$\bullet$ $R^{2}$ is no longer an appropriate measure of fit as it is based on unweighted sum of squared residuals. Use the Pseudo $R^{2}$. It is based on the squared correlation between observed and predicted values, and does not have the classic interpretation of "explained variance/total variance". Usually larger is better.
+
+$\bullet$ Maximized Log-Likelihood This is not a measure of fit, but a measure of relative model adequacy of tthe same dependent variable. In general, highest value (least negative) is best.
+
+$\bullet$ Some notion for the adjusted $R$-square: \textit{information criteria}. e.g., Akaike Information Criterion. Smallest AIC is the best. Only the relative comparison is meaningful. 
+
+\subsection{Computational Issues}\hfill\par 
+The log-likelihood functions in spatial econometrics are not standard. We have to model the joint distribution. Everything is about multivariate normal. To apply maximum likelihood for a count variable using Poisson distribution, the joint distribution and marginals are complicated (they are usually not of the same type). That is part of the reason why the approach taken in the literature is an indirect approach in a hierarchical specification  with a random effects specification. We do not model the counts directly, but model the intensity parameters. So it is a randomly varying parameter that has a component that is spatially dependent. 
+
+The presence of the Jacobian term is another source of complexity. It is a computation beast. There are also other large matrix expressions that are complicated. You can do sometime like writing the determinant as a product of the eigenvalues. But eigenvalues are not easy to compute.  
+
+We cannot have endogenous variables (therefore no IV) in the maximum likelihood estimation, and we need to have our weights are intrinsically symmetric. 
+
+The preferred approach is not to use maximum likelihood, for two big reasons:
+\begin{enumerate}
+	\item It is very difficult to maintain that all the variables on the right-hand side variables are exogenous. But ML assumes them away.
+	\item Heteroskedasticity. It is normal. But ML here basically ignores that.
+\end{enumerate}
+
+Remember the assumptions you make in the maximum likelihood: Normal distribution, variance constant. If these assumptions are violated, then we need to take that into account in the likelihood function. If we do not do that, we are still maximizing a likelihood function, but it could be the wrong one. And this can be serious in the sense that you lose your consistency in some circumstances.
 \printbibliography %Prints bibliography
 		
 \end{document}
