@@ -274,7 +274,99 @@ In the GWR setup, local estimation is based on nearby locations. But note that o
 \[	b(u_{i}, v_{i}) = [X'W(u_{i}, v_{i})X]^{-1}X'W(u_{i}, v_{i})y,	\]
 where $W(u_{i}, v_{i})$ is a matrix with weights in the diagonal elements.
 
+To carry out with GWR, we should be aware of the choice of bandwidth, parameter inference and the visualization.
+
+\subsection{Spatial Random Effect}\hfill\par 
+
+\section{Maximum Likelihood Estimation}
+\subsection{Spatial Stationarity}\hfill\par 
+ It is important to realize that the spatial pattern is just a realization of the spatial stochastic process, rather than multiple realizations in the map. Of course we are in trouble because you cannot infer the whole process from just one realization. The challenge here is how to treat map as if it has multiple data points (as different realizations of a random variable). In order to do this, we need to make strong assumptions pertaining a notion of equilibrium. The whole notion of \textit{stationarity} is a notion of equilibrium of the stochastic process such that we can do this. (Note that we are still in the cross-sectional world). 
  
+Our stationarity condition is 
+\[	\{z(s_{1}), \dots, z_{s{k}}\} \quad \text{and}\quad \{z(s_{1+h}), \dots, z({s_{k+h}})\} \quad \text{have the same distribution for all $k$ and all $h$}.	\]
+
+This is pretty unrealistic. A weaker condition would be the moment stationarity. This pertains to certain moments of the joint distributions. Keep these burdens on the model in mind. 
+
+\subsection{Ergodicity}
+ No matter which map we are looking at, we are getting the same information in terms of the process. 
+
+\subsection{Asymptotics in Space}\hfill\par 
+Uniform Law of Large Numbers
+\[	(1/N)\sum_{i}[g_{i}(x, \theta) - Eg_{i}(x, \theta)] \rightarrow 0.	\]
+$g$ is a function of data, could be the maximum of the likelihood function, or the minimum of the sum of squares, or other objective function.
+
+Central Limit Theorem: It's actually about how you go to the limit. In the limit, there is no uncertainty. The man deviation of a function computed for the "sample" from its expressed value converges to zero.  
+
+In space, we can go to the limit in different ways, and it matters. 
+\subsubsection{The Increasing Domain Asymptotics (Kansas Model)}\hfill\par 
+Unbounded space, infinite range, expands at the edges. Create boundary effect. The number of neighbors does not depend on $N$.
+\subsubsection{The Infill Asymptotics (Sandbox Model)}\hfill\par 
+Here the space is bounded. We ge to the asymptotic world by adding additional observations in the sandbox. Here the number of neighbors increases in $n$. 
+
+\subsection{ML Estimation Principle}\hfill\par 
+In ML Estimation, you maximize the likelihood, and the likelihood is the  joint probability of the sample. In order to figure out what the joint probability of the sample might be, we need a probability density function. ML is highly parameterized, and we need to make a lot of assumptions. It contracts with the methods of moments. 
+
+We think of the data as a sample from a fully specified distribution with a set of (pre-determined) parameters. Then we move to find the parameters that \textit{maximizes} the joint probability of the sample.
+
+The likelihood function is the expression of the joint probability of the sample as a function of data and parameters
+\[	L(\theta \mid X) = f(x_{1}, \dots, x_{n}, \theta).	\]
+
+Note that this is a likelihood function in the classical context, instead of in the Bayesian context. In the  classical context, the likelihood is a function that determines the parameters, conditional on the data. In Bayesian world, it is the other way around since all the parameters have a distribution (they are constants in the classical world).  
+
+For independent observations, this is the product of the individual observations. And if we take the log form, we have the \textit{log-likelihood function} as a sum.
+\[	\ln L(\theta \mid X) = \sum_{i} \ln f(x_{i}, \theta).	\]
+
+But this is no longer the case in spatial econometrics, as they are not independent. We have to deal with the joint probability as a whole. This is a fundamental difference. 
+
+We have to solve the optimization problem. We take the first order derivatives of $\ln L$ with respect to $\theta$ to solve for the parameter values. There is often no analytical solutions, so numerical optimization is necessary. 
+
+This is a point estimate, now we want to say something about the variability of the estimate. This is where the asymptotics kicks in.
+ 
+\textit{The Fisher Information Matrix} is defined as the negative expected value of the second order partial derivatives of the log-likelihood function. And the inverse of the information matrix is the asymptotic variance.  
+
+MLE is highly parametric: it has lots of informations, but if assumptions hold, it is optimal. It is consistent and asymptotic efficient  (the smallest asymptotic variance among consistent estimators). It is also asymptotically normal.
+
+$\bullet$ \textit{The invariance property} Note that the expected value of a function is not necessarily a function of the expected value.  But we are in the asymptotic world and dealing with these maximum likelihood estimates, anything goes. This is useful for policy analysis - our estimates can be used in calculations in the place of the true (unknown) parameter values.
+
+In spatial econometrics, because of the dependency of data, things are very complicated. This requires specialized laws of large numbers and central limit theorem. See the next section.
+
+\subsubsection{ML Estimator of Spatial Lag Model}\hfill\par 
+The main issue with the spatial lag model is the endogeneity. Specifically, the spatially lagged $y$ is directly correlated with the error term. The only way we can do this is to have a formal model for the randomness in this process. Remember that our model is 
+\[	y = \rho Wy + X\beta + e.	\]
+Note that the randomness is in the error term. So the randomness in $y$ is only because of the randomness in the error term. Therefore, we make assumptions about the parametric model for the randomness in the error term. Typically, we assume a multivariate normal distribution (multivariate because these things are dependent, so we have to work with the whole thing in one shot). So $e \sim \mathscr{N}(0, \sigma^{2}I)$. We get the randomness for the $y$ as a transformation from the randomness in the error terms. 
+
+The log-likelihood for joint density $e \sim \mathscr{N}(0, \Sigma)$ takes the form
+\begin{equation}\label{log-likelihood}
+	\ln L = -(n/2) \ln(2\pi) - (1/2) \ln |\Sigma| - (1/2) e'\Sigma^{-1}e.
+\end{equation}
+Note that the last term is a sum of squares, so $\max \ln L$ is equivalent to minimizing the weighted least squares as the other terms are constants. An immediate problem is that we do not observe them. But we do have a functional relationship between $e$ and the observed variable $y$ as 
+\[	e = (I - \rho W)y + X \beta \quad \text{or} \quad e = f(y).	\]
+
+Now, the likelihood of $y$ follows from the variable transformation, which requires Jacobian of the transformation.  The Jacobian of a transformation rescales the distribution so that the distribution of the transformed variable is proper. Formally, it is the determinant of an $n-$by$-n$ matrix
+\[	\det (\partial f/\partial y) = \det (I - \rho W).	\]
+This is a long way of saying that we need to change the likelihood function. Note how this not a problem in the standard regression: we have $\partial f/\partial y = 1$. 
+
+Now, the  log-likelihood for joint density is 
+\[	\ln L = -(n/2) \ln(2\pi) -(n/2)\ln \sigma^{2} + \ln |I-\rho W| - (y - \rho Wy - X \beta)'(y - \rho Wy - X \beta)/(2\sigma^{2}).	\]
+
+(Recall that we assumed $e \sim \mathscr{N}(0, \sigma^{2}I)$) 
+
+Note that the Jacobian of the $n-$by$-n$ matrix $I-\rho W$ enters the function directly. We can use numerical optimization to find the parameter values that yield $\max \ln L$, but it can be computationally intensive.
+
+The good news is that there are actually analytical solutions for $\beta$ and $\sigma^{2}$ from the FOCs. But we still need to get $\rho$. We then take the expressions for  $\beta$ and $\sigma^{2}$ and substitute them back to the likelihood function to get a \textit{concentrated likelihood function}. The resulting function is 
+\[	L = -(n/2) \ln [(e_{0}-\rho e_{L})'(e_{0}-\rho e_{L})/n] + \ln |I-\rho W|.	\]
+
+This is a nonlinear optimization problem over a single parameter. The parameter space turns out to be $(1/\omega_{\min}, 1/\omega_{\max})$ , where the endpoints are the minimal and maximal eigenvalues of the weights matrix. 
+
+Our information matrix is 
+\[	I(\theta) = - \mathbb{E}[\partial^{2} \ln  L/\partial \theta \partial \theta'],	\]
+and the asymptotic variance is just the inverse of it (and there is no analytical expression). The usual simplifications do not work, and partial derivatives explicitly needed for the information matrix. 
+
+The important thing to notice that the precision of the parameters of the error term ($\sigma$ is one of them) affects the precision of the $\rho$. This is a fundamental difference between pretty much anything in standard econometrics. This is peculiar in the spatial econometrics. 
+
+
+
+
 
 \printbibliography %Prints bibliography
 		
