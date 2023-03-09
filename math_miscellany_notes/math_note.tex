@@ -545,8 +545,70 @@ This requires the estimation of the alternative model, i.e., a spatial lag or a 
 \subsubsection{Likelihood Ratio Test}\hfill\par 
 For the likelihood ratio test, we actually need to estimate two models: the unconstrained (spatial) and the constrained (non-spatial). The test statistics follows a $\chi^{2}$ distribution with degree of freedom $1$. 
 \[	LR = 2[L(\theta) - L(\theta = 0)] \sim \chi^{2}(1).	\]
-Note that 
+Note that the unconstrained one always have a larger (in a non-strict sense) likelihood (or, "better fit") than the constrained. If not, something must be wrong and check your calculation.
  
+ Probably more powerful. Use more info.
+  
+\subsubsection{Lagrange Multiplier Test}\hfill\par 
+ The advantage of LM test is that we only need the estimation of the null model. But the derivation is quite painful.
+
+$\bullet$ \textbf{LM Error Test/ Score Test}
+\[	LM_{\lambda} = \frac{d_{\lambda}^{2}}{T} \sim \chi^{2}(1) \qquad \text{with} \quad d_{\lambda} = \frac{e'We}{\hat{\sigma}^{2}_{ML}},	\]
+where $T = tr(WW + W'W)$.
+
+Moran's  I and the LM Error Test are vary similar. 
+
+$\bullet$ \textbf{LM Lag Test} 
+\[	LM_{\rho} = \frac{d^{2}_{\rho}}{D} \sim \chi^{2}(1) \qquad  \text{with} \quad d_{p} = \frac{e'Wy}{\hat{\sigma}^{2}_{ML}},	\]
+where $D = (WX\hat{\beta})'[I - X(X'X)^{-1}X'](WX\hat{\beta}) / \hat{\sigma}^{2}_{ML} + T$. 
+
+One problem with these LM test is that the lag test has power against the error model, and vice versa. If one of the other alternative is present, then the distribution becomes a non-central chi square distribution, and the robust version shifts it back to the central chi square distribution.
+
+$\bullet$ \textbf{The Robust LM-Error} 
+We have
+\[	LM_{\lambda}^{*} = \frac{(d_{\lambda} - TD^{-1}d_{\rho})^{2}}{T(1-TD)} \sim \chi^{2}(1).	\]
+
+
+$\bullet$ \textbf{The Robust LM-Lag}
+We have 
+\[	LM_{\rho}^{*} = \frac{(d_{\rho} - d_{\lambda})^{2}}{((D-T))} \sim \chi^{2}(1).	\]
+
+Note that we should only use the robust tests when both LM-Error and LM-Lag reject the null, and do not use the robust tests when neither of the LM-Error and LM-Lag are significant. 
+
+\subsection{Higher Order Tests}\hfill\par 
+The test on SARMA has the null hypothesis $H_{0}: \lambda = \rho = 0$, and the test statistic is 
+\[	LM_{\rho \lambda} = \frac{d_{\lambda}^{2}}{T} + \frac{(d_{\lambda} - d_{\rho})^{2}}{D-T} \sim \chi^{2}(2).	\]
+
+We should be cautious with the interpretation of the SARMA test. A significant result does not necessarily mean that the altervative is a higher order model. Note that the test statistic is a sum of two - the LM Error + Robust LM-Lag (or LM - Lag +  Robust LM - Error). So if one of them is exceedingly high, the overall result is also significant. Do not rush to higher order models, but go to weight matrix etc. Simple models are always better.
+
+\subsection{Generalized Moran's I test}
+
+We can extend the Moran's I tests to residuals other than OLS, for example, the 2SLS regression.
+
+\subsection{Specification Search}
+
+The principle is how do you figure out what is a better model. Remember there is pre-testing problem. Economists and statistician care about specification test (machine learning world does not). There are two main strategies.
+\begin{enumerate}
+	\item forward step-wide strategy
+	\item  backward step-wide strategy. The most complex model in the spatial context is actually really hard to estimate, and sometimes even impossible to estimate. 
+\end{enumerate}
+
+$\bullet$ Forward Step-Wise Strategy
+
+We start from the constrained model, which is non-spatial, and use LM test statistics to guide model selection. We could add spatial heterogeneity or spatial dependence, and do the tests again, until the assumptions are satisfied. The problem here is pre-testing. This is awkward and there is no great solution to there theoretically. Practically speaking, this is fine.
+
+$\bullet$ Backward Step-Wise Strategy
+
+We start from the most complicated model we can think of, and then we move backward and test the constrains. The problem here is that this requires estimation of complex spatial models first to test parameter constrains (using Wald or LR tests). 
+
+\begin{figure}[hbt]
+{\centering \includegraphics[scale=0.48]{flowchart}}
+\caption{Flowchart for model specification}\label{F:flowchart}
+\end{figure}
+
+If both Robust tests rejects the null, and we cannot tell, then possibility of higher order model or alternative specifications. You are basically in trouble here. In this case, the specification test ceases, and we may need to go model comparisons in terms of the goodness of fit, meaning of interpretation and so on. As a rule of thumb, an error model is preferred than a lag model for economists. The lag thing is a beast. It is also frequently mis-interpretated. The price of my house does not depend on my neighbors. It is that the pattern of the prices as a whole is determined by the pattern of the explanatory variables at the location as well as the neighboring locations. 
+
+\newpage
 \printbibliography %Prints bibliography
 		
 \end{document}
