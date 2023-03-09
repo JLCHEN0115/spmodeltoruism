@@ -439,6 +439,114 @@ The preferred approach is not to use maximum likelihood, for two big reasons:
 \end{enumerate}
 
 Remember the assumptions you make in the maximum likelihood: Normal distribution, variance constant. If these assumptions are violated, then we need to take that into account in the likelihood function. If we do not do that, we are still maximizing a likelihood function, but it could be the wrong one. And this can be serious in the sense that you lose your consistency in some circumstances.
+
+\section{Specification Tests}\hfill\par 
+Some of the standard regression assumptions may be violated in practice, for example, the OLS $2$ assumption. We want to detect if this is the case. The motto of specification testing is to establish the formal connection between something that we compute for the \textit{residuals} (i.e., the difference between the predicted values and the true values) and something that is relevant for the unobservable error terms. 
+
+The classic linear regression is 
+\[	y = X \beta + e,	\]
+where $\mathbb{E}[ee'] = \sigma^{2}I$. (So uncorrelated error terms and homoskedasticity.)
+
+The important assumptions here are
+\begin{enumerate}
+	\item Correct specification. The true data generating process is actually linear.
+	\item Error terms. Test for covariance and heteroskedasticity. The error term could be spatially autocorrlated. (e.g., a SAR process).  Recall our inverse problem: the unbalanced neighbors will produce heteroskedasticity even if there is no heteroskedasticity in $e$. Is there any approach to separately detect that?
+	\item  Exogeneity $\mathbb{E}[e'X] = 0$. If there is endogeneity, it is usually hard to address in maximum likelihood setting. We prefer general methods of moments.
+\end{enumerate}
+
+Usually, specification test for one type typically have power for multiple types of misspecification. This complicates things. 
+
+If our test tells us that we need incorporate spatial structure into our OLS model, we will turn our attention to the spatial lag model or SAR error model. The later two are our "unconstrained" models (our alternative hypotheses), and by setting respective parameters to $0$, we will come back to the "constrained" model, the OLS. 
+
+\subsection{Types of Tests}\hfill\par 
+The formal structure of of hypothesis is 
+\[	H_{0}: \text{constrained model} \qquad H_{1}: \text{unconstrained model}.	\]
+
+For spatial lag model, we have 
+\[	H_{0}: \rho = 0 \qquad H_{1}: \rho \ne 0.	\]
+
+For spatial error model, we have 
+\[	H_{0}: \lambda = 0 \qquad H_{1}: \lambda \ne 0.	\]
+
+There are two board types of tests.
+
+$\bullet$ \textit{The Diffuse Tests.} This means the tests that have no specific alternative. For example, 
+\[	H_{0}: \text{no spatial autocorrelation} \qquad H_{1}: \text{there actually is}.	\]
+Basically, we want  to make sure that our specification is correct. If we reject $H_{0}$ in favor of $H_{1}$, the only thing we know is that there exists spatial autocorrelation. It could be the autoregressive model, moving average, the lag or the error models. These are like different favors of Moran's I. 
+
+$\bullet$ \textit{The Focused Tests.} This means the tests that have specific alternative. For example, 
+\[	H_{0}: \text{$\rho = 0$ in a spatial lag model.} \qquad H_{1}: \text{$\rho \ne 0$ in a spatial lag model.}	\]
+This is a significance test on $\rho$. Most of these focused tests are in highly parametric maximum likelihood frameworks. The examples include Wald test (asymptotic t-test), Likelihood Ratio test (LR), and Lagrange Multiplier test (LM), 
+
+Note that since we need a fully specified model, we need to make assumptions, and these assumptions may not hold. That means we may need specification tests for specification tests and so on. In classical statistics, the $p-$value of a test is valid only if that test is carried out in isolation. If one test is carried out after another test, we call this \textit{pre-testing}. In these scenarios, the $p-$value of the second test depends on what you decide (which is a statistical decision, and could be wrong!) in the first step. This is the same problem in the multiple test, and the $p-$values are not reliable. If you test long enough, it is going to be significant anyway. 
+
+In practice, people have instantaneous amnesia. Read more about the misuse of p-values. If you are way under the cutoff, you are fine. But if you are near the boundary, be very wary. The $p-$values are not reliable.
+
+\subsection{Diffuse Test: Moran's I}\hfill\par 
+We work with the residuals as we do not observe errors. The Moran's I statistics is defined as 
+\[	I = \frac{u'Wu/S_{0}}{u'u/N}, \qquad \text{with} S_{0} = \sum_{ij} w_{ij}.	\]
+Note that the numerator is a sum of the cross produce between the residual and its spatial lag, divided by the sum of all weights. The denominator is just the variance. For row-standardized weights, $S_{0} = N$ and hence $I = u'Wu/u'u$.
+
+The inference is not straightforward, but based on a asymptotic normal approximation. First we build the connection between the residual and the error terms
+\[	\begin{aligned}
+	u &= y - X[(X'X)^{-1}X'y] \\
+	&= [I - X(X'X)^{-1}X'](X\beta + e)\\
+	&= (X\beta - X\beta) + [I - X(X'X)^{-1}X']e\\
+	&= Me,
+ \end{aligned}	\]
+where $M := [I - X(X'X)^{-1}X'$ is an \textit{idempotent matrix}\footnote{This is everywhere in advanced econometrics} with the properties 
+\[MM = M = M' = M'M. \]
+
+Note that we write $u$ as a linear transformation of the true error terms $u$. However, $M$ is not invertible. Actually we can get $n-k$ uncorrelated residuals from this, which is the degree of freedom. This imperfect connection is good enough for us. 
+
+Given the null assumption about $e$ (not spatially correlated), we can figure out the properties of $u$ through this equation. We need to derive asymptotic normality of $I$. As a first step, we compute the expectation of $I$.
+
+We have 
+\[	\mathbb{E}[u'u]  \stackrel{(1)}{=} \mathbb{E}[e'Me] \stackrel{(2)}{=} \mathbb{E}[tr(e'Me)]  \stackrel{(3)}{=} \mathbb{E}[tr(Mee')]  \stackrel{(4)}{=} \sigma^{2}tr(M)  = \sigma^{2}(N-k).	\]
+(1) is by substitution, (2) is because $e'Me$ is a $1-$by$-1$ matrix, (3) is by the property of trace of a matrix, (4) is by our assumption that $\mathbb{E}[ee'] = \sigma^{2}I$.
+
+Similarly, we have 
+\[	\mathbb{E}[u'Wu] = \sigma^{2} tr(WM). 	\]
+
+It follows that 
+\[	\mathbb{E}[I] = tr(MW) / (N-K)	\]
+and 
+\[ \operatorname{Var}(I) = (T / [(N-K)(N-K-2)]) - (\mathbb{E}[I])^{2},	\]
+where $T$ is a complicated number.
+
+After proving a asymptotic normality property, we can use the standardized z-value 
+\[	z(I) = \frac{I-\mathbb{E}[I]}{\sqrt{\operatorname{Var}(I)}}	\]
+ for testing.
+ 
+ Note that permutation is never an option for Moran's I derived from residuals. 
+ 
+ You can generalize the Moran's I test statistics to other residuals. For example, the residuals in the two stage least square regressions, and residuals in a discrete dependent model. You can plug in Moran's I in the generalized residuals and do a test.
+ 
+ Moran's I can be computationally intensive as it involves traces of big matrices, an alternative would be the Lagrange multiplier statistics.
+ 
+ The lack of rejection means the model is correctly specified. However, the rejection for the null for Moran's I needs to be interpreted with caution: it is not clear what the alternative is. For example, it could be the error \textit{or} the lag (or both), and they can be combined with other misspecification. It is not clear which form of spatial autocorrelation might exit there.
+ 
+ Moran's I has power against many alternatives, such as non-normality, heteroskedasticity, autocorrelation and so on. It is a great misspecification test, and not that useful in a specification search - it is not clear what the next step should be.  
+ 
+\subsection{Classic ML-based Tests}\hfill\par 
+Three are three ways of thinking about specification test in a maximum likelihood framework. 
+\begin{enumerate}
+	\item \textit{value} of the estimate compared to null hypothesis. This is the usual Wald test (asymptotic t-test) that we do forever, and we need standard error. 
+	\item  \textit{fit of measure.} This compares the maximized log-likelihood with the log-likelihood of the constrained model. For example, the likelihood ratio (LR) test. Note that the log-likelihood is a function of our data, and therefore is a random variable also. To tell if the difference is large enough, we also need the standard error.
+	\item \textit{slope} of likelihood functions compare to zero. By the first order conditions, the slope of the log-likelihood function is $0$ at the optimum. And it is not necessarily $0$ at other places. We want to tell whether that difference in slope is large enough. Note that slope is also a random variable, and we need its standard error. Example includes the Lagrange multiplier (LR) test or Rao Score test.
+\end{enumerate}
+
+They are asymptotically equivalent, and in finite samples we have $W \geq LR \geq LM$. This only holds in perfect circumstances.
+
+\subsubsection{Wald Test}\hfill\par 
+This requires the estimation of the alternative model, i.e., a spatial lag or a spatial error model. Then we use the variance estimate, and we have 
+\[	t = \frac{\hat{\theta}}{\sqrt{\operatorname{Var}(\hat{\theta})}} \stackrel{d}{\longrightarrow} \mathscr{N}(0, 1) \quad \text{or}\quad t^{2} \sim \chi^{2}(1).	\]
+
+\subsubsection{Likelihood Ratio Test}\hfill\par 
+For the likelihood ratio test, we actually need to estimate two models: the unconstrained (spatial) and the constrained (non-spatial). The test statistics follows a $\chi^{2}$ distribution with degree of freedom $1$. 
+\[	LR = 2[L(\theta) - L(\theta = 0)] \sim \chi^{2}(1).	\]
+Note that 
+ 
 \printbibliography %Prints bibliography
 		
 \end{document}
