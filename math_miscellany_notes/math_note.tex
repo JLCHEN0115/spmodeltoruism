@@ -607,8 +607,143 @@ We start from the most complicated model we can think of, and then we move backw
 \end{figure}
 
 If both Robust tests rejects the null, and we cannot tell, then possibility of higher order model or alternative specifications. You are basically in trouble here. In this case, the specification test ceases, and we may need to go model comparisons in terms of the goodness of fit, meaning of interpretation and so on. As a rule of thumb, an error model is preferred than a lag model for economists. The lag thing is a beast. It is also frequently mis-interpretated. The price of my house does not depend on my neighbors. It is that the pattern of the prices as a whole is determined by the pattern of the explanatory variables at the location as well as the neighboring locations. 
-
 \newpage
+
+There are four phases in this note. First we looked at model specification and the ways to incorporate spatial dependence and heterogeneity into our model. Next, we have maximum likelihood estimation, which is the foundation for the third phase: specification testing. Now, in the fourth phase, we are back to estimation.
+
+\section{Spatial Two Stage Least Square}\hfill\par 
+ML paradigm might not work very well for two reasons
+\begin{enumerate}
+	\item Endogeneity;
+	\item  Normality and Heteroskedasticity.
+\end{enumerate} 
+An alternative is based on the instrumental variables and in a big picture on a generalized method of moments.
+
+\subsection{Endogeneity and Instruments}\hfill\par 
+Consider the spatial lag model 
+\[	y = \rho W y + X\beta + u.	\]
+The closed form is 
+\[		y = (I-\rho W)^{-1} X\beta + (I- \rho W)^{-1}u. \]
+The spatial lag term $Wy$ is endogenous, i.e., $\mathbb{E}[(Wy)'u] \ne 0$.
+
+What are the instruments and where to find them?
+
+If we have a fully specified system of equations, then we want to find the excluded variables for the instruments (think about the supply and demand system). If we do not have such a system, then we look for the conditional expectation of the endogeneous variable $\mathbb{E}[Wy \mid X]$. We have 
+\[	\begin{aligned}
+	\mathbb{E}[Wy \mid X] &= W(I-\rho W)^{-1}X\beta \\
+	&= WX\beta + \rho W^{2}X\beta + \rho^{2}W^{3}X\beta + \dots.
+\end{aligned}	\]
+
+Under the assumption that $\mathbb{E}[X'u] = 0$, $Q = [X, WX, \dots]$ is a natural instrument. (In practice usually the first order lag term). 
+
+We have the spatial two stage least squares, which uses triangular array central limit theorem, and there are some more assumptions needed to be pay attention to (the full rank conditions of some matrices). 
+
+Now we go to some refinements.
+
+$\bullet$ Spatial 2SLS with Additional Endogenous Variables
+
+This is the case when ML is not well-equipped to deal with because it would have to model the endogenous of this variable in the simultaneous equation. Some literature about this includes limited information maximum likelihood and full information maximum likelihood, but nowadays it is no longer talked about since it requires a fully specified system of equations, and no one would want to stand behind that.
+
+This is the case when not only $Wy$ is endogenous but also some of the $Z$
+\[	y = \rho Wy + X\beta + Y\gamma + u.	\]
+
+We need instruments for the other endogenous variables and move ahead with 2SLS. This is the easy part. The hard part is to prove the law of large numbers and the central limit theorem. (But this work has been done). It is a good idea to also spatially lag the instruments for the other endogenous variables.
+
+\subsection{Best and Optimal Estimators}\hfill\par 
+All the instruments that satisfy the conditions are consistent, but they are not necessarily efficient. After we get some consistent estimate of $\beta$ and $\rho$, we can do some iteration to improve our precision.
+
+$\bullet$ Optimal Instrument Matrix. Dont wanna do this, the big inverse.
+
+$\bullet$ Best 2SLS. This is not bad.
+
+$\bullet$ Optimal GMM. See \textcite{leeEfficientGMMEstimation2010}. GMM is setting up conditions (moment conditions) that holds in the population, and then replace them by their sample counterparts. We have the orthogonality condition 
+\[	\mathbb{E}[Q'u] = 0	\]
+and a condition in quadratic form
+\[	\mathbb{E}[u'Pu] = \sigma^{2} tr P = 0.	\]
+
+\subsection{HAC standard error}\hfill\par 
+This paradigm is easily generalizable to robust standard errors. Then you have the best of both worlds: you have dealt with the endogenity of the spatially lagged dependent variable and you have dealt with the complications of heteroskedasticity (without having to modelling it explicitly, which is what you have to do in the maximum likelihood setup). 
+
+Remember that the misspecification of the spatial error model results in unbiased estimate (the problem is on inference). The standard response for OLS having incorrect standard error is to have \textit{feasible generalized least squares}.  The FGLS gives us consistent estimates (large sample property) and better standard errors. What if we take that idea and apply it to the standard errors  that comes from  the residuals in a least square regression (or 2SLS). We kind of modify the standard errors on the fly. 
+
+Recap. The general covariance structure of the OLS.
+
+\[	y = X\beta + u, \qquad \text{where} \mathbb{E}[uu'] = \Sigma.	\]
+
+Note that by having $\Sigma$ ( instead of $\sigma^{2}I$), we allow both heteroskedasticity and autocorrelatiion. So
+\[	\operatorname{Var}(\beta_{OLS}) = (1/n)(1/n X'X)^{-1}(1/nX'\Sigma X)(1/nX'X)^{-1}.	\]
+
+Notice that we develop an estimator for the term $(1/nX'\Sigma X)$, which is a $k-$by$-k$ matrix instead of $\sigma$, which is a $n-$by$-n$ matrix (there are too many parameters to estimate). This is the idea behind the Hal White (sandwich) estimator. The key result is to establish a consistent estimator for this expression $(1/n)\sum_{i}\sum_{j}\sigma_{ij}x_{i}x_{j}'$. The problem is that we cannot estimate all of these, and we have to simplify that. 
+
+Hal White dealt with the Heteroskedasticy and developed the Heteroskedastic-Consistent Covariance estimation. 
+
+For the spatial models, covariance is a greater problem. There are too many parameters to estimate. We have 
+\[	\operatorname{plim} (1/n)X'\Sigma X = (1/n)\sum_{i}\sum_{j}\sigma_{ij} x_{i}x_{j}', \]
+and there are too many terms to estimate. The average is over $n$ but there are $n^{2}$ covariance terms. As always, as there are too many of them, we impose structure. In time series, we could put a maximum length beyond which there is no more correlation, or we could put different weights on `neighbors'. We can also do this in the space domain. The Spatial HAC estimator also replace the question of $n-$by$-n$ by the question of $k-$by$-k$ problem. HAC corrects for  both heteroskedasticity and spatial auto correlation of unknown form.
+
+Suppose we have an spatial lag model, and we use spatial 2SLS for estimation.  If we use HAC, then we are allow for remaining error autocorrelation of unknown form without having to go to SAREM model or higher order models.
+
+\subsubsection{Spatial HAC}\hfill\par 
+
+
+\section{Generalized Methods of Moment}\hfill\par 
+The principle of generalized method of moments is estimating the population moments by sample moments. 
+
+See econ704.pdf for a refreshment of the MM for OLS and 2SLS. Now we generalize this. 
+
+$\bullet$ General framework. The GMM in the regression context. The orthogonality conditions gives us identification. And in the perfect case we have $k$ equations for $k$ parameters, if $l > k$ (more conditions), then we need to do a minimizing squares problem. We can do the weighted version of OLS/2SLS to give the observations with higher precision higher weights, and the optimal GMM involves setting the weigh matrix $W = S^{-1}$, where $S$ is the variance of the moment conditions. We want to add spatial structure in $S$. This leads us to the spatially weighted least squares.
+
+Generalized Method of Moments (GMM) provides a computationally convenient method for estimating the parameters of statistical models based on the information in population moment conditions. This structure has made it very popular in econometrics because competing economic theories often imply that economic variables satisfy different sets of population moment conditions. The specific form of these population moment conditions depends on the context but the generic form of the GMM estimator is the same in each case. This flexibility means that GMM has been implemented in very diverse areas spanning macroeconomics, finance, agricultural economics, environmental economics and labour economics. Its widespread use in econometrics has both stimulated and been facilitated by the development of numerous statistical inference techniques based on GMM estimators. These inference techniques allow researchers, inter alia, to test hypotheses about the parameters of the econometric model and also to test whether the population moment conditions are consistent with the data. 
+
+In addition, GMM subsumes many other well-known estimators, such as least squares, instrumental variables and maximum likelihood. As a result, GMM provides a convenient framework for considering general aspects of estimation and inference in statistics, and, in many ways, is becoming the common language of econometric dialogue.
+
+\section{Spatial Panels}\hfill\par 
+\subsection{Data Structure}\hfill\par 
+We have two dimensions of data here. We have the cross-sectional/spatial units and time series. Traditionally, we treat panel data as $N$ time series with $T$ observations each. If the time series is short, then we usually focus on individual heterogeneity (of the unobserved kind, to take into account them). If the timer series are longer,  we focus on time dynamics. The spatial approach flips this around. It considers $T$ cross-sections of size $N$. So we have one cross-section for each time period. For large $N$ and small $T$, we focus on spatial specification. And for large $N$ and large $T$, there are many possibilities. We stack the data by cross-sections stacked on top of each other. 
+
+The simplification for the space-time weight is we assume constant weights by time period
+\[	W_{NT} = I_{T} \otimes W_{N},	\]
+where $\bigotimes$ is the \textit{Kronecker product}. The resulting $W_{NT}$ is an $NT-$by$-NT$ matrix that has $W_{N}$ in the diagonal. Importantly, this means that there is no spillover effect across time. As for the space-time dynamics,  we use the concept of Space-Time Separability. We deal with each dimensions in turn. We deal with cross-sectional dependence using a weight matrix, and then the time-dependence using some structure. Then we do a Kronecker product by 
+\[	\Sigma_{NT} = \Sigma_{T} \otimes \Sigma_{N}	\]
+for the variance-covariance matrix. We get $ \Sigma_{N}$ by assuming some spatial  process, e.g., the autoregressive or moving average process. And we get $\Sigma_{T}$ by assuming some time-series structure or non-parametric time covariance measure. This enables us to look how unit $i$ at time $t$ is correlated with unit $j$ at time $s$. 
+
+We are interested in additional information that stacking together these two dimensions give us. There are cross-sectional heterogeneity versus temporal heterogeneity, cross-sectional dependence versus temporal dependence and all sorts of combinations of these. But we should be aware of the identification problems. 
+
+$\bullet$ Homogeneity. The classic pooled cross-section times series is 
+\[	y_{it} = X_{i,t}\beta + \epsilon_{it}.	\]
+So we have the same parameters and functional forms for all locations and all times. However, this is typically too rigid, but an useful point of departure.
+
+$\bullet$ Heterogeneity. The other end of the spectrum is extreme heterogeneity. We have 
+\[	y_{it} = X_{it}\beta_{it} + \epsilon_{it}.	\]
+Here we have the incidental parameter problem. This is not operational in the classic paradigm. We could get around of this problem by going to the Bayesian paradigm where all coefficients have a distribution.
+
+In classic econometrics for panel data, people focus on individual heterogeneity and time dependence. In the spatial approach, we focus on temporal heterogeneity and cross-sectional dependence. As there are typically not so many time periods, the temporal heterogeneity can be easily dealt with. The basic way to approach this is to think heterogeneity and dependence as either a fixed effect or a random effect. Ironically, they are the same mathematically, but they are very different substantively. 
+
+$\bullet$ \textbf{Individual Heterogeneity - Fixed Effects}\hfill\par 
+Specifically, there are separate intercepts for each $i$. We do not want to estimate because of the incidental parameter problem, instead we could wash them out using the panel data. In the literature, it is said as a way to correct for spatial heterogeneity, but hardly it is.
+
+The classic panel-data interpretation of the spatial fixed effect is that every unit has its own intercept:
+\[	y_{it} = \alpha_{i} + X_{i,t}\beta + \epsilon_{it}.	\]
+The ``multi-level'' implementation is thinking that there are different intercepts for each larger entity (e.g., states and counties). In matrix notation, the individual heterogeneity fixed effects model can be concisely written as 
+\[	y_{t} = \alpha + X_{t}\beta + \epsilon_{t},\quad \text{for} t = 1,2, \dots, n.	\]
+Or more concisely,
+\[	y = (\iota_{T} \otimes \alpha) + X\beta + \epsilon,	\]
+where $\iota_{T}$ is a column vector of $1$'s with dimension $T$.
+
+The main interpretation is that these individual fixed effects can be correlated with the other variables in the model. Basically they are like another variable. If we got some effects that are hard to quantify, for example, the state cultural effect or the country legal system effect, and if we model them as the fixed effects, then we can allow them to be correlated with the other variables in $X$ (e.g., the GDP). In contrast, if that effect is viewed as random, that is, it becomes a part of the error term, then we cannot have it correlated with the other explanatory variables. If you do the random effect, you need to make sure that the effect is not correlated with $X$. There is a classic for the difference between random effect and the fixed effect: the Hausman test.
+
+$\bullet$ \textbf{Cross-sectional/temporal Heterogeneity - Fixed Effects}\hfill\par 
+ The preferred way in spatial econometrics is to estimate a different time fixed effect for each time period. This is because that the time periods $T$ is typically small (and therefore not sufficient for random effect, which relies on the asymptotics), and we have sufficient number of observations in each cross section to get a decent estimate. These intercepts describes how the dependent variable would be different between time periods if everything else are the same. The matrix notation, we have 
+ \[	y = (\alpha \otimes \iota_{N}) + X\beta + \epsilon,	\]
+where $\alpha = (\alpha_{1} \alpha_{2} \dots \alpha_{N})'$.
+
+$\bullet$ \textbf{Cross-sectional/temporal Heterogeneity - Random Effects}\hfill\par 
+In the random effect model, we take individual effect as a random variable
+\[	y_{it} = \mu_{i} + X_{i,t}\beta + v_{i,t},	\]
+where $\mu_{i}$ is a random variable , and it is a part of error term: $\epsilon_{it} = \mu_{i} + v_{it}$.
+
+In matrix notation, we have 
+\[	\epsilon = (\iota_{T} \otimes I_{N})\mu,	\] 
 \printbibliography %Prints bibliography
 		
 \end{document}
