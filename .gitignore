@@ -53,3 +53,9 @@ node_modules
 
 $ Ignore SASS config files
 .sass-cache
+
+*.xlsx
+
+*.xls
+
+*.dta
