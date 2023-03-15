@@ -743,7 +743,28 @@ In the random effect model, we take individual effect as a random variable
 where $\mu_{i}$ is a random variable , and it is a part of error term: $\epsilon_{it} = \mu_{i} + v_{it}$.
 
 In matrix notation, we have 
-\[	\epsilon = (\iota_{T} \otimes I_{N})\mu,	\] 
+\[	\epsilon = (\iota_{T} \otimes I_{N})\mu.	\] 
+
+Now, we do not estimate $\mu_{i}$ individually. Instead, we make them part of the distribution. This corrects the estimation of $\beta$ for the presence of individual heterogeneity, but does not give us the individual heterogeneity. The attraction is that at the end of the day, all we care is $\beta$. 
+
+$\bullet$ \textbf{Temporal Heterogeneity - Random Effects}\hfill\par 
+We can do the same thing for the time heterogeneity. Notice that if we include the time random effect, then it creates a cross-sectional correlation of a vary particular kind, namely, $\mathbb{E}[\epsilon_{i,t}\epsilon_{j,t}] = \sigma^{2}\delta$. All the cross-sectional elements in the same time period share the same time random effect. This is not necessarily what we want - if we also modeled the spatial heterogeneity, then they got mixed and create the problem of identification.
+
+The preferred approach is to model time heterogeneity as fixed effect and the cross-sectional heterogeneity as random effect.
+
+\subsection{Asymptotics}\hfill\par 
+Which one , $T$ or $N$, goes to limit? If both, which one faster?
+
+The dimensions that goes to infinity creates an incidental problem problem for fixed effects. If $N \rightarrow \infty$, we cannot have individual fixed effects(heterogeneity); if $T \rightarrow \infty$, we cannot have time fixed effects(heterogeneity). 
+
+The typical setup in spatial econometrics is to model temporal heterogeneity as the fixed effect, and the individual heterogeneity as the random effect. But that creates problem if you are trying to do space-time forecasting: what is you fixed effect for the next year? So we need to deal with it in some other fashion, for example, the random effect, time-wise correlation in the error terms, or some explicit dynamic model. The key idea is that you should keep in mind what is the point of your model: is it for forecasting or structural relationships.
+
+\section{Dynamic Models}\hfill\par 
+Pay attention to the endogenity and identification problem. By including a new variable, see if the coefficients captures all its effects - it could be also affecting $y$ indirectly somewhere else.
+
+\section{Pooled Spatial Panels}\hfill\par 
+This is just simple extension of cross-sectional model over $T$ periods.
+
 \printbibliography %Prints bibliography
 		
 \end{document}
