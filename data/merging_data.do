@@ -27,6 +27,9 @@ replace City = "Xiangyang" if City == "Xiangfan";
 *add international arrivals into the data, mathing on id;
 merge 1:1 城市 using city_lat_long.dta, generate(mresult_location);
 drop mresult_location;
+order ID 城市 City Lat Long;
+*save wide form data;
+save "/Users/jialiangchen/Documents/spmodeltoruism/data/clean_data_wide.dta", replace;
 
 *go to the long form;
 reshape long total_vistor total_tincome domesticarrival dometric_rev inter_arrival inter_rev CPIprecedingyear CPIbenchmark res_house_price grp_per_ceic salary pop_CEIC area_CEIC road_CEIC hotel agent A_spot railway_station, i(ID) j(year);
