@@ -136,3 +136,16 @@ drop city 指标 区域 频率 单位 数据来源 状态 SR码 K L M N O P Q A*
 rename (次国家 R S T U V W X Y Z) (City inter_rev2011 inter_rev2012 inter_rev2013 inter_rev2014 inter_rev2015 inter_rev2016 inter_rev2017 inter_rev2018 inter_rev2019);
 
 save "/Users/jialiangchen/Documents/spmodeltoruism/data/international_revenue.dta", replace;
+
+********************************************************************************;
+*Data wrangling for lat and long data;
+********************************************************************************;
+*clear the environment;
+clear all;
+*input data;
+import excel "/Users/jialiangchen/Documents/spmodeltoruism/data/city_latlong.xlsx", sheet("Sheet3") firstrow;
+*delete the character “市” at the end of each city name;
+replace 城市 = udsubstr(城市, 1, udstrlen(城市) - 1);
+drop if 城市 == "七台河" | 城市 == "绥化" | 城市 =="莱芜";
+
+save "/Users/jialiangchen/Documents/spmodeltoruism/data/city_lat_long.dta", replace;
