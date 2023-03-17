@@ -8,8 +8,9 @@ import dbase /Users/jialiangchen/Documents/spmodeltoruism/shapefiles/china_secon
 *********************************************************************;
 *some cleaning work;
 *********************************************************************;
-drop ID_0 ISO InORnot NAME_0 ID_1 NAME_1 ID_2 HASC_2 CCN_2 CCA_2 VARNAME_2 layer path;
+drop ID_0 ISO InORnot NAME_0 ID_1 NAME_1 HASC_2 CCN_2 CCA_2 VARNAME_2 layer path;
 rename (NAME_2 ENGTYPE_2 NL_NAME_2) (City Admintype 城市);
+gen 城市shapefile = 城市;
 replace 城市 = "北京市" if City == "Beijing";
 replace 城市 = "重庆市" if City == "Chongqing";
 
@@ -29,18 +30,19 @@ replace 城市 = "郴州市" if City == "Chenzhou";
 replace 城市 = "上海市" if City == "Shanghai";
 replace 城市 = "天津市" if City == "Tianjin";
 
-
+replace ID_2 = 345 if City == "Yingkou";
 *remove the character "市" if the city name is ending with a "市";
 replace 城市 = udsubstr(城市, 1, udstrlen(城市) - 1) if udsubstr(城市, -1, .) == "市";
 *one exception;
 replace 城市 = "运城" if City == "Yuncheng";
 merge 1:1 城市 using /Users/jialiangchen/Documents/spmodeltoruism/data/clean_data_wide.dta, generate(merge_result);
-drop merge_result;
+drop merge_result ID;
+
+export delimited using "/Users/jialiangchen/Documents/spmodeltoruism/data/dataforgeoda.csv", replace;
 
 *decrease our variable names length < 10;
-reshape long total_vistor total_tincome domesticarrival dometric_rev inter_arrival inter_rev CPIprecedingyear CPIbenchmark res_house_price grp_per_ceic salary pop_CEIC area_CEIC road_CEIC hotel agent A_spot railway_station, i(ID) j(year);
+*reshape long total_vistor total_tincome domesticarrival dometric_rev inter_arrival inter_rev CPIprecedingyear CPIbenchmark res_house_price grp_per_ceic salary pop_CEIC area_CEIC road_CEIC hotel agent A_spot railway_station, i(ID) j(year);
 
-rename (total_vistor total_tincome domesticarrival dometric_rev inter_arrival inter_rev CPIprecedingyear CPIbenchmark res_house_price grp_per_ceic salary pop_CEIC area_CEIC road_CEIC hotel agent A_spot railway_station) (ttvis ttin davl drev inavl inrev cpip cpib house pgdp sly pop area road htl agnt Aspt rstn );
+*rename (total_vistor total_tincome domesticarrival dometric_rev inter_arrival inter_rev CPIprecedingyear CPIbenchmark res_house_price grp_per_ceic salary pop_CEIC area_CEIC road_CEIC hotel agent A_spot railway_station) (ttvis ttin davl drev inavl inrev cpip cpib house pgdp sly pop area road htl agnt Aspt rstn );
 
-export dbase using"/Users/jialiangchen/Documents/spmodeltoruism/data/forgeoda.dbf", replace;
 
