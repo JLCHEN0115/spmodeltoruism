@@ -1,0 +1,277 @@
+---
+title: "Tourism demand and revenue with sptial effects"
+output:
+  html_document: 
+    toc: true
+    theme: united
+  pdf_document: default
+date: "2023-03-20"
+---
+
+## Requirements
+
+### External libraries
+
+For Linux and macOS (I'm in M2) users who are working with spatial data in R, you may encounter error messages like this during package downloading (if you run `install.packages("sf")`, for example)
+```
+*configure: error: libproj or sqlite3 not found in standard or given locations.*
+```
+This is because they need additional (non-R) libraries such as PROJ, GDAL or GEOS (which are automatically installed for Windows users). It is highly recommend to install the CRAN binary packages by running in R terminal
+```{r eval=FALSE}
+install.packages("sf", type = "mac.binary")
+```
+
+If you do want to download the source package, you should refer to [https://r-spatial.github.io/sf/#macos](https://r-spatial.github.io/sf/#macos) and and use the similiar specification like `configure.args =` for additional configuration.
+
+### R packages
+Load and install the R packages we might will be using.(This is an inclusive list, and I did this purposely for future reference. Comment those not useful in the codes.)
+```{r, cache=FALSE, message=FALSE}
+## Download(if needed) and load package management tool.
+if (!require("pacman")) install.packages("pacman")
+## Download(if needed) and load other package for spatial analysis.
+pacman::p_load(sf, tidyverse, data.table, hrbrthemes, lwgeom, rnaturalearth, maps, mapdata, spData, tigris, tidycensus, leaflet, mapview, tmap, tmaptools)
+## Download(if needed) and load other package for spatial regression.
+pacman::p_load(pspatreg, spatialreg, spdep, sf, plm, splm)
+## ggplot2 plotting theme
+theme_set(hrbrthemes::theme_ipsum())
+```
+
+```{r}
+## Download and load our companion package.
+## devtools::install_github("JLCHEN0115/spatial2023")
+## library("spatial2023")
+```
+## Data wrangling
+### Reading in the spatial data. 
+Here I will use the absolute path. Replace the path of the `cities_included.shp` file on your computer. The data will be included in the companion package later on.
+```{r, message = FALSE}
+ct_shape <- st_read("/Users/jialiangchen/Documents/spmodeltoruism/shapefiles/china_second_level_admin_shape/cities_included.shp")
+```
+
+Import more data.
+```{r, message = FALSE}
+ct_data <- read.csv("/Users/jialiangchen/Documents/spmodeltoruism/data/dataforR.csv")
+```
+
+Perform a left join for our datasets.
+```{r, message = FALSE}
+ct_spdata_wide <- left_join(
+  ct_shape %>% select(NL_NAME_2, geometry) %>% rename(城市shapefile = NL_NAME_2),  
+  ct_data,
+  by = "城市shapefile"
+)
+
+```
+Reshape our data to long(tidy) form.
+```{r}
+ct_spdata_long <- ct_spdata_wide %>% 
+  pivot_longer(
+    cols = tarvl_2011:irev_2019,
+    names_to = c(".value", "year"),
+    names_pattern = "(.+)_(.+)"
+  )
+ct_spdata_long
+```
+
+As you can see above. Our dataset contains 283 prefectual level cities in 9 year, which give us a total number of $283 \times 9 = 2547$ observations. Type `str(ct_spdata_long) ` and `View(ct_spdata_long)` for more information.
+
+We can draw plots using `ggplot2`. (For mysterious reasons, R draw graphs freakingly slow here on my computer. It spend me 15 mins + to get a plot in base R from terminal. A bug to be addressed in the future). I skiped the evaluation of the next chunk of code and just included the graph here.
+```{r eval=FALSE}
+plotfilter2015 <- ct_spdata_long %>% filter(year == 2015) %>% ggplot() +
+  geom_sf(aes(fill = tarvl), alpha = 0.8, col = "white")+
+  scale_fill_viridis_c(name = "Arrivals") +
+  ggtitle("Cities included in the research.")
+plotfilter2015
+```
+![](/Users/jialiangchen/Documents/spmodeltoruism/figures/figure1.png){width=50%}
+
+## Spatial Autocorrelation check
+Let's check some Moran's I statistics. Before that, we need to prepare a list of weights based on neighboring relationships.`spdep::poly2nb` produces such neighboring relationships, and then `spdep::nb2listw` turns them into weights.
+
+```{r}
+## Use cross-sectional data from 2015 for the moment.
+filter2015 <- ct_spdata_long %>% filter(year == 2015)
+## Create a weighting matrix based on contiguity relations.
+filter2015 %>% spdep::poly2nb("geometry") %>% 
+  spdep::nb2listw(zero.policy = TRUE) -> Wnb
+```
+
+### Global Moran's I statistics
+```{r}
+## Calculate the Moran's I test with matrix Wnb and year 2015.
+Wnb %>%
+  spdep::moran.test(filter2015$tarvl, ., zero.policy = TRUE)
+```
+The result shows a positive Moran I statistics, as we expected. It is both substantively ($\approx 0.16$) and statistically significant (with a p-value $0.00001139$).
+
+We could try different weighting schemes and different years, but let's draw a Moran scatter-plot. The solid line in the plot indicates in the Moran’s I statistic. It goes though the mean values and its slope is exactly the Moran’s I.
+```{r}
+ spdep::moran.plot(filter2015$tarvl, 
+                   Wnb, 
+                   zero.policy = TRUE, 
+                   xlab = 'Total Tourism Arrivals',
+                   ylab = 'Lagged Total Tourism Arrivals (of Neighbors)',
+                   pch=20)
+```
+
+### Global Moran's I statistics
+We can use Local Moran’s I or Local Indicators of Spatial Association (LISA). LISA can help identify clusters of high or low values as well as outliers that are surrounded by opposite values.
+
+```{r}
+# use spdep package to test (global autocorrelation)
+# spdep::localmoran, spdep::localmoran.exact
+# local moran result: 
+##  High positive Ii means simlar values (either high or low clusters)
+##  Low negative Ii means dissimilar values (outliers)
+##  
+
+lisaRslt <- spdep::localmoran(filter2015$tarvl, Wnb, 
+                              zero.policy = TRUE, na.action = na.omit)
+
+## The dimension of LISA result and the orignal sf object
+dim(lisaRslt)
+dim(filter2015)
+## Show some of the results.
+head(lisaRslt)
+```
+Note that `Ii` stands for the local moran statistic, `E.Ii` is the expectation of local moran statistic, `Var.Ii` is the variance, `Z.Ii` is the standard deviation, and `Pr(z > 0)` is the p-values.
+
+Assuming statistical significance, if $\text{Ii} > 0$,  it would be a cluster (similar to nearby or neighboring values, HH or LL); if $\text{Ii} < 0$, it would be a outlier (very different from nearby or neighboring values, HL or LH).
+
+```{r}
+# Now we can derive the cluster/outlier types for each spatial feature in the data
+significanceLevel <- 0.05 # 95% confidence
+meanVal <- mean(filter2015$tarvl)
+
+lisaRslt %<>% tibble::as_tibble() %>%
+  magrittr::set_colnames(c("Ii","E.Ii","Var.Ii","Z.Ii","Pr(z > 0)")) %>%
+  dplyr::mutate(coType = dplyr::case_when(
+  `Pr(z > 0)` > 0.05 ~ "Insignificant",
+  `Pr(z > 0)` <= 0.05 & Ii >= 0 & filter2015$tarvl >= meanVal ~ "HH",
+  `Pr(z > 0)` <= 0.05 & Ii >= 0 & filter2015$tarvl < meanVal ~ "LL",
+  `Pr(z > 0)` <= 0.05 & Ii < 0 & filter2015$tarvl >= meanVal ~ "HL",
+  `Pr(z > 0)` <= 0.05 & Ii < 0 & filter2015$tarvl < meanVal ~ "LH"
+))
+
+# Now add this coType to original sf data
+filter2015$coType <- lisaRslt$coType %>% tidyr::replace_na("Insignificant")
+
+ggplot(filter2015) +
+  geom_sf(aes(fill=coType),color = 'lightgrey') +
+  scale_fill_manual(values = c('red','brown','green','blue','cyan'), name='Clusters & \nOutliers') +
+  labs(title = "Tourism arrivals of our included cities, year2015")
+```
+
+
+## Spatial Corss-sectional regressions
+### Spatial Error Model
+As a point of departure, we do an OLS and test whether spatial autocorrelation is present in the residuals.
+```{r}
+olsRslt <- lm(log(tarvl+1) ~ CPIp +
+                log(1+salary) +
+                log(1+area) + log(1+pop) +
+                log(1+railway),
+              data = filter2015,)
+summary(olsRslt)
+```
+```{r}
+# Derive the residuals from the regression. Need to handle those missed values.
+lmResiduals <- rep(0, length(filter2015$tarvl)) #create a bunch of zeros
+resIndex <- olsRslt$residuals %>% names() %>% as.integer() #create index for our 283 residuals
+lmResiduals[resIndex] <- olsRslt$residuals
+
+# Test if there is spatial autocorrelation in the regression residuals (errors).
+Wnb %>%
+  spdep::moran.test(lmResiduals, ., zero.policy = TRUE)
+  
+```
+Our result show statistically and economically significant Moran I statistic, which implies that the residuals from linear regression have positive spatial autocorrelation. With that, we do a SAR error model.
+
+$$Y = X\beta + u, \qquad \text{where} \quad u = \lambda Wu + \epsilon.$$
+```{r}
+# use spdep package to run the spatial error model 
+# Use spatialreg::errorsarlm to run the same model
+serrRslt <- spatialreg::errorsarlm(log(tarvl+1) ~ CPIp +
+                log(1+salary) +
+                log(1+area) + log(1+pop) +
+                log(1+railway),
+              data = filter2015,
+              listw = Wnb,
+              # Durbin = TRUE, #uncomment for including lagged X
+              zero.policy = TRUE, 
+              na.action = na.omit);
+
+summary(serrRslt)
+```
+From the AIC, the spatial error model performs better than the linear model. Now we test if there is spatial dependence left after we controled that for the error term.
+```{r}
+# Derive the residuals from the regression. Need to handle those missed values.
+seResiduals <- rep(0, length(filter2015$tarvl))
+resIndex <- serrRslt$residuals %>% names() %>% as.integer();
+seResiduals[resIndex] <- serrRslt$residuals
+
+# Test if there is spatial autocorrelation in the regression residuals (errors).
+Wnb %>%
+  spdep::moran.test(seResiduals, ., zero.policy = TRUE) 
+```
+We cannot reject the null. We are good to go.
+
+### Spatial Lag Model
+This time, we estimate the following model, aka. The spatial lag model.
+$$Y = \rho WY + X\beta + \epsilon.$$
+```{r}
+# use spdep package to run the spatial lag model 
+# spatialreg::lagsarlm 
+slmRslt <- spatialreg::lagsarlm(log(tarvl+1) ~ CPIp +
+                log(1+salary) +
+                log(1+area) + log(1+pop) +
+                log(1+railway),
+              data = filter2015,
+              listw = Wnb,
+              # Durbin = TRUE, #uncomment for including lagged X
+              zero.policy = TRUE, 
+              na.action = na.omit);
+
+summary(slmRslt)
+```
+
+We can also calculate the direct, indirect and total impacts.
+```{r}
+trMnb <- trW(listw = Wnb, type= "moments")
+impacts(slmRslt, tr = trMnb)
+```
+
+The spatial lag term $\rho$ is highly statistically and economically significant (greater than $0$).
+
+```{r}
+# Derive the residuals from the regression. Need to handle those missed values
+slResiduals <- rep(0, length(filter2015$tarvl))
+resIndex <- slmRslt$residuals %>% names() %>% as.integer();
+slResiduals[resIndex] <- slmRslt$residuals
+
+# Test if there is spatial autocorrelation in the regression residuals (errors) after we corrected the spatial dependence by including the spatially lagged dependent variable.
+Wnb %>%
+  spdep::moran.test(slResiduals, ., zero.policy = TRUE)
+```
+
+### SARAR model
+There is..., but let's run a "SAC/SARAR" model.
+$$y = \rho Wy + X\beta + u, \qquad\text{where}\quad u = \lambda Wu + \epsilon.$$
+```{r}
+# use spdep package to run the spatial lag and spatial error model 
+# spatialreg::sacsarlm
+sararRslt <- spatialreg::sacsarlm(log(tarvl+1) ~ CPIp +
+                log(1+salary) +
+                log(1+area) + log(1+pop) +
+                log(1+railway),
+              data = filter2015,
+              listw = Wnb,
+              # Durbin = TRUE, #uncomment for including lagged X
+              zero.policy = TRUE,
+              na.action = na.omit)
+
+summary(sararRslt)
+```
+
+## Spatial panel regressions
+
