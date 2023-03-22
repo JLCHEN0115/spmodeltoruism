@@ -1,5 +1,6 @@
 ---
 title: "Tourism demand and revenue with sptial effects"
+author: "Jialiang"
 output:
   html_document: 
     toc: true
@@ -12,7 +13,7 @@ date: "2023-03-20"
 
 ### External libraries
 
-For Linux and macOS (I'm in M2) users who are working with spatial data in R, you may encounter error messages like this during package downloading (if you run `install.packages("sf")`, for example)
+For Linux and macOS (I'm in M2) users who are working with spatial data in R, you may encounter error messages like this during package downloading (if you run `install.packages("sf")`, for example).
 ```
 *configure: error: libproj or sqlite3 not found in standard or given locations.*
 ```
@@ -24,14 +25,14 @@ install.packages("sf", type = "mac.binary")
 If you do want to download the source package, you should refer to [https://r-spatial.github.io/sf/#macos](https://r-spatial.github.io/sf/#macos) and and use the similiar specification like `configure.args =` for additional configuration.
 
 ### R packages
-Load and install the R packages we might will be using.(This is an inclusive list, and I did this purposely for future reference. Comment those not useful in the codes.)
+Load and install the R packages we might will be using.(This is an inclusive list, and I did this purposely for future reference. I commented those not useful in the codes.)  
 ```{r, cache=FALSE, message=FALSE}
 ## Download(if needed) and load package management tool.
 if (!require("pacman")) install.packages("pacman")
 ## Download(if needed) and load other package for spatial analysis.
-pacman::p_load(sf, tidyverse, data.table, hrbrthemes, lwgeom, rnaturalearth, maps, mapdata, spData, tigris, tidycensus, leaflet, mapview, tmap, tmaptools, zoo)
-## Download(if needed) and load other package for spatial regression.
-pacman::p_load(pspatreg, spatialreg, spdep, sf, plm, splm, pspatreg)
+## pacman::p_load(sf, tidyverse, data.table, hrbrthemes, lwgeom, rnaturalearth, maps, mapdata, spData, tigris, tidycensus, leaflet, mapview, tmap, tmaptools, zoo, pspatreg, spatialreg, spdep, sf, plm, splm, pspatreg)
+## Download(if needed) and load other package for use in this document.
+pacman::p_load(sf, tidyverse, data.table, hrbrthemes, pspatreg, spatialreg, spdep, sf, plm, splm, pspatreg, zoo)
 ## ggplot2 plotting theme
 theme_set(hrbrthemes::theme_ipsum())
 ```
@@ -45,11 +46,14 @@ theme_set(hrbrthemes::theme_ipsum())
 ### Reading in the spatial data. 
 Here I will use the absolute path. Replace the path of the `cities_included.shp` file on your computer. The data will be included in the companion package later on.
 ```{r, message = FALSE}
+# Replace the absolute path of the `cities_included.shp` file on your computer. 
+# Drag the file to terminal (command + space, then search `terminal` on spotlight) if you are in mac, the path will appear.
 ct_shape <- st_read("/Users/jialiangchen/Documents/spmodeltoruism/shapefiles/china_second_level_admin_shape/cities_included.shp")
 ```
 
 Import more data.
 ```{r, message = FALSE}
+## change the absolute path on your computer, same as above
 ct_data <- read.csv("/Users/jialiangchen/Documents/spmodeltoruism/data/dataforR.csv")
 ```
 
@@ -114,7 +118,7 @@ We could try different weighting schemes and different years, but let's draw a M
                    pch=20)
 ```
 
-### Global Moran's I statistics
+### Local Moran's I statistics
 We can use Local Moran’s I or Local Indicators of Spatial Association (LISA). LISA can help identify clusters of high or low values as well as outliers that are surrounded by opposite values.
 
 ```{r}
@@ -354,3 +358,14 @@ serr_panel <- spml(log(tarvl+1) ~ CPIp +
                Hess = FALSE)
 summary(serr_panel)
 ```
+
+## Summary
+I first merged the shape (geometry) file with our other data. The Spatial Autocorrelation check by Moran's I is fine. Spatial Corss-sectional regressions using year 2015 points us to an error model, which might be problematic. It could be that we have too much left in the error term. Then we run the Spatial panel regressions, the results are quite good.
+
+Things to notice:
+
+* Note that the `CPIp` is not significant both statistically and economically. Need to address this issue. (the minimum of `CPIp` is $99.74$, and the third quantile is $102.45$ - there isn't many variation in the variable.)
+
+* All estimation in the document is done by maximum likelihood methods. Importantly, this assumes the endogeneity of the right-handside variables other than the spatiall lagged $y$ and the normality, homoskedasticity or the error term. Be cautious here.
+
+* Spatial heterogeneity will be addressed in another document.
