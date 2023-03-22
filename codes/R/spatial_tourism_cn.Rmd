@@ -29,9 +29,9 @@ Load and install the R packages we might will be using.(This is an inclusive lis
 ## Download(if needed) and load package management tool.
 if (!require("pacman")) install.packages("pacman")
 ## Download(if needed) and load other package for spatial analysis.
-pacman::p_load(sf, tidyverse, data.table, hrbrthemes, lwgeom, rnaturalearth, maps, mapdata, spData, tigris, tidycensus, leaflet, mapview, tmap, tmaptools)
+pacman::p_load(sf, tidyverse, data.table, hrbrthemes, lwgeom, rnaturalearth, maps, mapdata, spData, tigris, tidycensus, leaflet, mapview, tmap, tmaptools, zoo)
 ## Download(if needed) and load other package for spatial regression.
-pacman::p_load(pspatreg, spatialreg, spdep, sf, plm, splm)
+pacman::p_load(pspatreg, spatialreg, spdep, sf, plm, splm, pspatreg)
 ## ggplot2 plotting theme
 theme_set(hrbrthemes::theme_ipsum())
 ```
@@ -275,3 +275,82 @@ summary(sararRslt)
 
 ## Spatial panel regressions
 
+### Preparation
+My feeling is that panel data are sensitive to NAs and empty neighborhoods in R. With that, I will first construct a new weighting matrix W, and then deal with the NAs in our data.
+
+Take a look of our where do our NAs inhabit.
+```{r}
+which(ct_spdata_long %>% is.na()  %>% colSums() > 0) %>% names()
+```
+
+Take a look of our old weighting scheme (Recall that it was based on continguity).
+```{r}
+summary(Wnb, zero.policy=TRUE)
+```
+
+As you can see, there are 7 regions with no links: 79(海口) 80(三亚) 202(西宁) 260(乌鲁木齐) 261(克拉玛依) 262(拉萨) 281(舟山). We should deal with these two problems in turn.
+
+#### 4 Nearest Neighbors Weighting matrix
+To avoid islands, we contruct a new meighting matrix by 4 NN.
+```{r, results="hide"}
+## Identify coordinates
+coords <- cbind(ct_data$Long, ct_data$Lat)
+
+## Create our 4 NN matrix
+## Note that the latitude and longitude are handled using great circle distances
+## R2 distances will be inaccurate
+matrix5nn <- knearneigh(coords, k = 4, longlat = TRUE)
+
+## Convert our weighting matrix to neighborhood list
+W5nnb <- knn2nb(matrix5nn)
+## Plot the neighborhood relationships
+plot(W5nnb, coords)
+## Convert our neighborhood list to an listw object
+W5nnlistw <- spdep::nb2listw(W5nnb, zero.policy = FALSE) 
+```
+#### Interpolate the missing values
+We do our interpolation by simple(crude?) linear interpolation. This actually make sense since in our `ct_spdata_long` dataset, most of the cities are arranged based on their provinces, also we have nine time periods for each city. Linear interpolationThey should be fine because of the geographical similarity and time trends.
+```{r}
+## We only interpolate the variables we will be using in this document
+## library(zoo)
+ct_spdata_long <- ct_spdata_long %>%
+        mutate(CPIp = na.approx(CPIp), salary = na.approx(salary), area = na.approx(area), pop = na.approx(pop), railway = na.approx(railway))
+```
+
+### Spatial Lag panel model
+Since we changed the weighting scheme and did an interpolation, the following result is not directly comparable with the corss-sectional results above.
+
+```{r}
+## random effects panel with spatial lag
+sar_panel <- spml(log(tarvl+1) ~ CPIp +
+                log(1+salary) +
+                log(1+area) + log(1+pop) +
+                log(1+railway),
+               data = ct_spdata_long,
+               index=c("城市", "year"),
+               listw = W5nnlistw,
+               model="random", 
+               spatial.error="none", 
+               lag=TRUE)
+summary(sar_panel)
+```
+```{r}
+## impacts
+impac_panel <- spatialreg::impacts(sar_panel, listw = W5nnlistw, time = 9)
+summary(impac_panel, zstats=TRUE, short=TRUE)
+```
+### Spatial Error panel model
+```{r}
+## fixed effects panel with spatial errors
+serr_panel <- spml(log(tarvl+1) ~ CPIp +
+                log(1+salary) +
+                log(1+area) + log(1+pop) +
+                log(1+railway),
+               data = ct_spdata_long,
+               index=c("城市", "year"),
+               listw = W5nnlistw,
+               model="within", 
+               spatial.error="b", 
+               Hess = FALSE)
+summary(serr_panel)
+```
