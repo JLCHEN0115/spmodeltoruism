@@ -1,0 +1,150 @@
+---
+title: "Spatial Heterogeneity and Spatially Varying Coefficients"
+author: "Jialiang"
+output:
+  html_document: 
+    toc: true
+    theme: united
+date: "2023-03-23"
+---
+
+## Preparation
+
+I refrained the codes for data wrangling procress from apperaing in the html.
+```{r, echo = FALSE}
+## Load and install the R packages we might will be using.
+pacman::p_load(sf, tidyverse, data.table, hrbrthemes, zoo, GWmodel)
+```
+
+```{r, include = FALSE}
+# Replace the absolute path of the `cities_included.shp` file on your computer. 
+# Drag the file to terminal (command + space, then search `terminal` on spotlight) if you are in mac, the path will appear.
+ct_shape <- st_read("/Users/jialiangchen/Documents/spmodeltoruism/shapefiles/china_second_level_admin_shape/cities_included.shp")
+## Import more data.
+## change the absolute path on your computer, same as above
+ct_data <- read.csv("/Users/jialiangchen/Documents/spmodeltoruism/data/dataforR.csv")
+## Perform a left join for our datasets.
+ct_spdata_wide <- left_join(
+  ct_shape %>% select(NL_NAME_2, geometry) %>% rename(城市shapefile = NL_NAME_2),  
+  ct_data,
+  by = "城市shapefile"
+)
+## Reshape our data to long(tidy) form.
+ct_spdata_long <- ct_spdata_wide %>% 
+  pivot_longer(
+    cols = tarvl_2011:irev_2019,
+    names_to = c(".value", "year"),
+    names_pattern = "(.+)_(.+)"
+  )
+ct_spdata_long
+```
+
+
+## Spatial Heterohegeneity
+
+###  Geographically Weighted Regression (GWR)
+
+We do a basic GWR using the `GWmodel` package in R. There are several steps to take.
+
+1. Estimate an optimal bandwidth (based on the model fitness), which will define the local neighborhoods.
+
+2. Do the estimation for each feature(unit) in our data by including the variables of its neighbors.
+
+#### Choose an optimal bandwidth
+
+We can use `GWmodel::bw.gwr` for automatic bandwidth selection to calibrate a basic GWR model.
+
+Again I am using the cross sectional data from 2015. I haven't found a good way to deal with panel data. More exploration is in need. 
+
+```{r, include=FALSE}
+## cross-sectional data from 2015.
+filter2015 <- ct_spdata_long %>% filter(year == 2015)
+## Linear interpolation for missing values
+## library(zoo)
+filter2015 <- filter2015 %>%
+        mutate(CPIp = na.approx(CPIp), salary = na.approx(salary), area = na.approx(area), pop = na.approx(pop), railway = na.approx(railway))
+```
+
+```{r, message=FALSE}
+# Estimate an optimal bandwidth, using great circle distances
+# library(GWmodel)
+bwVal <- GWmodel::bw.gwr(log(tarvl+1) ~ CPIp +
+                          log(1+salary) +
+                          log(1+area) + log(1+pop) +
+                          log(1+railway),
+                         data = filter2015 %>% sf::as_Spatial(), 
+                         approach = 'AICc', kernel = 'bisquare', 
+                         longlat = TRUE,
+                         adaptive = TRUE)
+```
+
+This gives us an optimal bandwidth of $84$ (number of nearest neighbours). Now we run the basic GWR.
+
+```{r}
+## the basic GWR regression
+## library(GWmodel)
+gwr.tarvl2015 <- gwr.basic(log(tarvl+1) ~ CPIp +
+                          log(1+salary) +
+                          log(1+area) + log(1+pop) +
+                          log(1+railway),
+                         data = filter2015 %>% sf::as_Spatial(), 
+                     bw = bwVal, kernel = "bisquare", adaptive = TRUE)
+```
+
+Show the results.
+
+```{r}
+print(gwr.tarvl2015)
+```
+
+The Adjusted R-squared increased quite a lot. We can examine the spatial variations of the estimated model coefficients.
+
+```{r, include=FALSE}
+## gwr.res$SDF stores the info we want
+names(gwr.tarvl2015$SDF)
+```
+```{r, echo = FALSE}
+## Do some calculation.
+spGWRData <- gwr.tarvl2015$SDF@data;
+spGWRData$coefsalary <- spGWRData$`log(1 + salary)`;
+# Calculate the p value from (student) t value
+spGWRData$psalary <- 2*pt(-abs(spGWRData$`log(1 + salary)_TV`), df = dim(spGWRData)[1] -1)
+
+spGWR <- gwr.tarvl2015$SDF; 
+spGWR@data <- spGWRData;
+```
+
+This show how the coefficients of the local salary change over space. 
+```{r, eval = FALSE}
+plotcoefsalary <- spplot(spGWR, 'coefsalary', main="Estimated Coefficients of Local Salary on Total Tourism Arrivals")
+plotcoefsalary
+```
+![](/Users/jialiangchen/Documents/spmodeltoruism/figures/salarycoeffs.png){width=100%}
+
+But this variable is not signficiant everywhere, see the following figure.
+```{r, eval = FALSE}
+plotpsalary <- spplot(spGWR, 'psalary', main="p-value of Local Salary on Total Tourism Arrivals")
+plotpsalary
+```
+![](/Users/jialiangchen/Documents/spmodeltoruism/figures/salarycoeffsp.png){width=100%}
+
+## Summary
+
+The effect of local salary on total tourism arrivals shows a strong geographical pattern: 
+
+Statically, the coefficient is not significant in the middle and northeast part of China. Economically, they are positive in most of the areas, but there is a strong negative effect in the upper middle area (although not statically significant at a $10 \%$ level.)
+
+Things to address later on.
+
+1. Find a way to use panel data.
+
+2. Again. Endogeneity -- so is there a GWR-GWR-SL(spatial lag) 2SLS model we can use?
+
+3. The optimal number of NN calibrated here is $84$, our old NN was 4 or 5 in the previous document, am I being too conservative? Try increase the number of neighbors.
+
+
+
+
+
+
+
