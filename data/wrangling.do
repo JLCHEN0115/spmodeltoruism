@@ -7,15 +7,16 @@
 *!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!;
 *Arrivals in 10 thousands in databse_ZL, in thousands in other files;
 *Revenue in 100 million yuan in databse_ZL, in milliions in other files;
-*Not corrected yet;
+*We use thousands for arrivals and milliions for revenue.
 *!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!;
 *clear the environment;
 clear all;
 *input data;
 import excel "/Users/jialiangchen/Documents/spmodeltoruism/data/database_ZL.xlsx", sheet("Sheet1") cellrange(A2:AT2567) firstrow;
 
-drop Prov ID CPI housingpriceRMBm2 BusinessVolume_Telecommunicatio-gdp_ceic ind-taxi AK-railway_length railway_number-baidu;
-rename (L CPIbenchmark2011 CPIprecedingyear100) (res_house_price CPIbenchmark CPIprecedingyear);
+drop Prov ID CPI housingpriceRMBm2 BusinessVolume_Telecommunicatio-digcompany emp_culent gdp_ceic agent A_spot AL railway_length railway_number recreationalgreen parks baidu;
+
+rename (L CPIbenchmark2011 CPIprecedingyear100 ind AK) (rhprice CPIbenchmark CPIprecedingyear Tertiary Spot5A);
 
 *The old ID is missing unit 64 and 67;
 gen id_correct=.;
@@ -37,7 +38,7 @@ forvalues i = 2269(1)2277{;
 };
 
 
-reshape wide total_vistor total_tincome CPIprecedingyear CPIbenchmark res_house_price grp_per_ceic salary pop_CEIC area_CEIC road_CEIC hotel agent A_spot railway_station, i(id_correct) j(year);
+reshape wide total_vistor total_tincome CPIprecedingyear CPIbenchmark emp_hotcat rhprice grp_per_ceic salary pop_CEIC area_CEIC road_CEIC Tertiary invest foreigncap bus taxi hotel Spot5A CNSA railway_station greencoverage, i(id_correct) j(year);
 
 *drop city Bijie(245) and Tongren(246);
 drop if City == "Bijie" | City == "Tongren";
@@ -65,11 +66,11 @@ generate ID = _n;
 drop id;
 order ID;
 *drop variables we will not use;
-drop city 指标 区域 频率 单位 数据来源 状态 SR码 K L M N O P Q AA;
+drop city 指标 区域 频率 单位 数据来源 状态 SR码 K L M N O P Q;
 *rename our variables;
-rename (次国家 R S T U V W X Y Z) (City domesticarrival2011 domesticarrival2012 domesticarrival2013 domesticarrival2014 domesticarrival2015 domesticarrival2016 domesticarrival2017 domesticarrival2018 domesticarrival2019);
+rename (次国家 R S T U V W X Y Z) (City inter_arrival2011 inter_arrival2012 inter_arrival2013 inter_arrival2014 inter_arrival2015 inter_arrival2016 inter_arrival2017 inter_arrival2018 inter_arrival2019);
 
-save "/Users/jialiangchen/Documents/spmodeltoruism/data/domesticarrival.dta", replace;
+save "/Users/jialiangchen/Documents/spmodeltoruism/data/internationalarrival.dta", replace;
 
 ********************************************************************************;
 *Data wrangling for intervational tourist arrivals;
@@ -89,9 +90,8 @@ order ID;
 *drop variables we will not use;
 drop city 指标 区域 频率 单位 数据来源 状态 SR码 K L M N O P Q A*;
 *rename our variables;
-rename (次国家 R S T U V W X Y Z) (City inter_arrival2011 inter_arrival2012 inter_arrival2013 inter_arrival2014 inter_arrival2015 inter_arrival2016 inter_arrival2017 inter_arrival2018 inter_arrival2019);
-
-save "/Users/jialiangchen/Documents/spmodeltoruism/data/internationalarrival.dta", replace;
+rename (次国家 R S T U V W X Y Z) (City domesticarrival2011 domesticarrival2012 domesticarrival2013 domesticarrival2014 domesticarrival2015 domesticarrival2016 domesticarrival2017 domesticarrival2018 domesticarrival2019);
+save "/Users/jialiangchen/Documents/spmodeltoruism/data/domesticarrival.dta", replace;
 
 ********************************************************************************;
 *Data wrangling for domestic tourism revenue;

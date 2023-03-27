@@ -32,16 +32,20 @@ replace 城市 = "天津市" if 城市shapefile == "天津|天津";
 replace 城市 = udsubstr(城市, 1, udstrlen(城市) - 1) if udsubstr(城市, -1, .) == "市";
 *one exception;
 replace 城市 = "运城" if 城市shapefile == "运城县";
+
+*merge the shape file data with the actual data;
 merge 1:1 城市 using /Users/jialiangchen/Documents/spmodeltoruism/data/clean_data_wide.dta, generate(merge_result);
 drop merge_result ID;
 
-reshape long total_vistor total_tincome domesticarrival dometric_rev inter_arrival inter_rev CPIprecedingyear CPIbenchmark res_house_price grp_per_ceic salary pop_CEIC area_CEIC road_CEIC hotel agent A_spot railway_station, i(城市shapefile) j(year);
+reshape long total_vistor total_tincome CPIprecedingyear CPIbenchmark rhprice emp_hotcat grp_per_ceic salary pop_CEIC area_CEIC road_CEIC Tertiary invest foreigncap bus taxi hotel Spot5A CNSA railway_station greencoverage domesticarrival dometric_rev inter_arrival inter_rev, i(城市shapefile) j(year);
 
-rename (total_vistor total_tincome domesticarrival dometric_rev inter_arrival inter_rev CPIprecedingyear CPIbenchmark res_house_price grp_per_ceic salary pop_CEIC area_CEIC road_CEIC hotel agent A_spot railway_station) (tarvl_ trev_ darvl_ drev_ iarvl_ irev_ CPIp_ CPIb_ hprice_ pgdp_ salary_ pop_ area_ road_ hotel_ agent_ Aspot_ railway_);
+rename (total_vistor total_tincome CPIprecedingyear CPIbenchmark rhprice emp_hotcat grp_per_ceic salary pop_CEIC area_CEIC road_CEIC Tertiary invest foreigncap bus taxi hotel Spot5A CNSA railway_station greencoverage domesticarrival dometric_rev inter_arrival inter_rev) (tarl_ trev_ CPIpy_ CPI11_ hprice_ emphotel_ GDPpc_ slry_ pop_ area_ road_ terti_ invest_ forncap_ bus_ taxi_ hotel_ spot5A_ scenum_ subnum_ grnld_ dmarl_ dmrev_ inarl_ inrev_);
 
 drop VARNAME_2;
 
-reshape wide tarvl_ trev_ darvl_ drev_ iarvl_ irev_ CPIp_ CPIb_ hprice_ pgdp_ salary_ pop_ area_ road_ hotel_ agent_ Aspot_ railway_, i(城市shapefile) j(year);
+reshape wide tarl_ trev_ CPIpy_ CPI11_ hprice_ emphotel_ GDPpc_ slry_ pop_ area_ road_ terti_ invest_ forncap_ bus_ taxi_ hotel_ spot5A_ scenum_ subnum_ grnld_ dmarl_ dmrev_ inarl_ inrev_, i(城市shapefile) j(year);
+
+drop ID_0-path;
 
 order 城市 城市shapefile City Lat Long;
 
