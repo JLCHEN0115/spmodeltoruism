@@ -1,0 +1,87 @@
+---
+title: "results"
+author: "Jialiang"
+date: "2023-03-27"
+output: html_document
+---
+
+## Preparation
+
+Load the packages we will be using in this document.
+```{r pkgs}
+## Load and install the R packages we might will be using.
+pacman::p_load(sf, tidyverse, magrittr, data.table, hrbrthemes, zoo, GWmodel, spatialreg, spdep, plm, splm, pspatreg, zoo, chatgpt)
+```
+
+Some data wrangling work.
+```{r }
+# Replace the absolute path of the `cities_included.shp` file on your computer. 
+# Drag the file to terminal (command + space, then search `terminal` on spotlight) if you are in mac, the path will appear.
+ct_shape <- st_read("/Users/jialiangchen/Documents/spmodeltoruism/shapefiles/china_second_level_admin_shape/cities_included.shp")
+## Import more data.
+## change the absolute path on your computer, same as above
+ct_data <- read.csv("/Users/jialiangchen/Documents/spmodeltoruism/data/dataforR.csv")
+## Perform a left join for our datasets.
+ct_spdata_wide <- left_join(
+  ct_shape %>% select(NL_NAME_2, geometry) %>% rename(城市shapefile = NL_NAME_2),  
+  ct_data,
+  by = "城市shapefile"
+)
+
+## Reshape our data to long(tidy) form.
+ct_spdata_long <- ct_spdata_wide %>% 
+  pivot_longer(
+    cols = tarl_2011:grnld_2019,
+    names_to = c(".value", "year"),
+    names_pattern = "(.+)_(.+)"
+  )
+
+## Create average tourist expenditure variable in RMBs
+ct_spdata_long %<>% 
+  mutate(
+    tavexp =  (trev/tarl)*1000,
+    dmavexp = (dmrev/dmarl)*1000
+  )
+
+## Some place has zero international arrival
+## Avoid division by zero
+ct_spdata_long %<>% 
+  filter(inarl > 0) %>%
+  mutate(
+    inavexp = (inrev/inarl)*7*1000
+  )
+
+
+## Create average tourist expenditure variable in RMBs## Convert the "human" variables from 10 thousands to thousands, just for consistency 
+ct_spdata_long %<>%
+  mutate(emphotel = emphotel * 10,
+         pop = pop * 10
+  )
+
+## linear interpolation to deal with missing values
+ct_spdata_long %<>%
+        mutate(across(c(tarl:inavexp), \(x) zoo::na.approx(x, rule = 2))) 
+
+## check if there are still NA left
+sum(is.na(ct_spdata_long))
+
+## summarize the data
+summary(ct_spdata_long)
+```
+
+Our data sets contains the data for 283 prefectual-level cities in China from 2011-2019. The following variables are included. 
+
+`城市shapefile` are the names of the cities in Chinese. Note that it is useful to have chinese names here, as the names in English `City` is incapable of distinguishing the city Fuzhou from Jiangxi province and the city Fuzhou from Fujian province. So make sure to use the chinese version whenever you want to do some macthing/identification/merging work.
+
+The `Lat` and `Long` variables give the latitude and longitude of these cities. `Geometry` is unique in the `sf` object, it stores the geographical information. `tarl`, `dmarl` and `inarl` are total tourist arrivals, domestic tourist arrivals and international tourist arrivals in thousands, resp.  `trev`, `dmrevl` and `inrev` are total tourism revenue, domestic revenue and international tourism revenue in millions of RMBs (and dollars for the international revenue), resp. `tavexp`, `dmavexp` and `inavexp` are the average tourist expenditure in the total, domestic and international level, resp (They are measured in RMB). `CPIpy` and `CPI11` are CPI indexes with the base of the preceeding year and 2011, respectively. `hprice` is the price of residential houses (in RMB/m2) in that city. `emphotel` is the number of employees in the hotel and catering industry (in thousands). `GDPpc` is the GDP per capita in RMB. `slry` is the local salary in RMB. `pop` is the population in the city in thousands. `area` measures the administrative area of the city in square kilometers. `road` measures the area of roads in million square meters. `terti` is the percent of the tertiary industry in the total economy. `invest` is the total investment in fixed assets in 10 thousands RMB, `forncap` is the actual use of foreign capital in 10 thousands of dollars. `bus`, `taxi`, `hotel` are the numbers of oeprating buses, taxis and hotels with star ratings in the city. `spot5A` is then number of "5A" tourism spots. `scenum` is the number of scenic spots. `subnum` is the number of subway stations in the city. `grnld` is the green coverage measured in 10,000 square meters. 
+
+## Moran's I for panel data
+
+## Test for different combinations of explanatory variables
+
+
+## Test for the number of neighbors
+
+## Two regime panel models with fixed effects: an attemption
+
+## Summary
