@@ -69,6 +69,8 @@ ct_spdata_long %<>%
 ## check if there are still NA left
 sum(is.na(ct_spdata_long))
 
+## set tell R it is a panel
+pdata.frame(ct_spdata_long, index = c("城市shapefile", "year"))
 ## summarize the data
 summary(ct_spdata_long)
 ```
@@ -105,7 +107,7 @@ We first construct a weighting matrix using 8 nearest neighbors. The optimal num
 ## Identify coordinates of the centroid of the multipolygon
 coords <- st_centroid(st_geometry(ct_spdata_wide))
 
-## Create our 4 NN matrix
+## Create our 8 NN matrix
 ## Note that the latitude and longitude are handled using great circle distances
 ## R2 distances will be inaccurate
 knn8W <- knearneigh(coords, k = 8)
@@ -120,10 +122,49 @@ listw8nn <- spdep::nb2listw(list8nn)
 plot(list8nn, coords)
 ```
 
+```{r, results="hide"}
+## Identify coordinates of the centroid of the multipolygon
+coords <- st_centroid(st_geometry(ct_spdata_wide))
+
+## Create our 4 NN matrix
+## Note that the latitude and longitude are handled using great circle distances
+## R2 distances will be inaccurate
+knn4W <- knearneigh(coords, k = 4)
+
+## Convert our knn object to neighborhood list
+list4nn <- knn2nb(knn4W)
+## Convert to a matrix object
+matrix4nn <- spdep::nb2mat(list4nn)
+## Convert our neighborhood list to an listw object
+listw4nn <- spdep::nb2listw(list4nn) 
+## Plot the neighborhood relationships
+plot(list4nn, coords)
+```
+
+
 ```{r}
 ## Create another weighting matrix based on contiguity relations (queen).
 ct_spdata_wide %>% spdep::poly2nb("geometry") %>% 
   spdep::nb2mat(zero.policy = TRUE) -> matrixWnb
+
+ct_spdata_wide %>% spdep::poly2nb("geometry") %>%  spdep::nb2listw(zero.policy = TRUE) -> listwnb
+```
+
+Create spatial lagged variables.
+```{r}
+## Create spatial lag for some variables
+
+lagGDPpc <- slag(pdata.frame(ct_spdata_long, index = c("城市shapefile", "year"))$GDPpc, listw = listw4nn) %>% as.numeric( )
+
+ct_spdata_long$lagGDPpc <- lagGDPpc
+
+lagslry <- slag(pdata.frame(ct_spdata_long, index = c("城市shapefile", "year"))$slry, listw = listw4nn) %>% as.numeric( )
+
+ct_spdata_long$lagslry <- lagslry
+
+lagtarl <- slag(pdata.frame(ct_spdata_long, index = c("城市shapefile", "year"))$tarl, listw = listw4nn) %>% as.numeric( )
+
+ct_spdata_long$lagtarl <- lagtarl
 ```
 
 
@@ -155,31 +196,53 @@ We change some variables from the same group.
 formula2 <- log(1+tarl) ~ log(1 + tavexp) + log(1 + slry) + log(1+forncap) + log(1+emphotel) + log(1+scenum) + log(1+area) + log(1+bus)
 ```
 
-3. **combo3**:
-
-We pick all the significant variables above.
+4. **combo4**:
+We pick all the significant variables above. (excluding `log(1 + tavexp)`)
 ```{r}
-formula3 <- log(1+tarl) ~ log(1 + tavexp) + log(1 + GDPpc) + log(1 + slry) + log(1+forncap) + log(1+invest) + log(1+hotel) + log(1+spot5A) + log(1+emphotel) + log(1+scenum) + log(1+pop) + log(1+bus)
+pslry <- pdata.frame(ct_spdata_long, c("城市shapefile", "year"))$slry
+
+formula4 <- log(1+tarl) ~ log(1 + GDPpc) + log(1 + slag(pslry, listw = listw4nn)) + log(1+invest) + log(1+hotel) + log(1+spot5A)+ log(1+scenum) + log(1+pop) + log(1+bus)
+```
+
+5. **combo5**:
+We pick all the significant variables above. (including `log(1 + tavexp)`)
+```{r}
+pslry <- pdata.frame(ct_spdata_long, c("城市shapefile", "year"))$slry
+
+formula5 <- log(1+tarl) ~ log(1 + tavexp) + log(1 + GDPpc) + log(1 + slag(pslry, listw = listw4nn)) + log(1+invest) + log(1+hotel) + log(1+spot5A) + log(1+scenum) + log(1+pop) + log(1+bus)
 ```
 
 ## Test for spatial dependence
 
-1. These tests are panel versions of the locally robust LM test for spatial dependence of Anselin (1996).
+$H_{0}:$ No random effect, no spatial autocorrelation
 ```{r}
-slmtest(formula = formula1, data = ct_spdata_long, listw = listw8nn, index = c("城市shapefile", "year"), model = "within", test = "rlme")
+bsktest(formula0, data = ct_spdata_long, listw = listw4nn, index = c("城市shapefile", "year"), test = "LMH")
 ```
+$H_{0}:$ spatial autocorrelation
 ```{r}
-slmtest(formula = formula1, data = ct_spdata_long, listw = listw8nn, index = c("城市shapefile", "year"), model = "within", test = "rlml")
+bsktest(formula0, data = ct_spdata_long, listw = listw4nn, index = c("城市shapefile", "year"), test = "CLMlambda")
 ```
-
-This points us to the spatial lag model.
+$H_{0}:$ random effect
+```{r}
+bsktest(formula0, data = ct_spdata_long, listw = listw4nn, index = c("城市shapefile", "year"), test = "CLMmu")
+```
 
 ## Test between fixed effects model and random effect model (Hausman test)
 
 ```{r}
 ## $H_{0}:$ The preferred model is Random Effect
-sphtest(x = formula1, data = ct_spdata_long, listw = listw8nn, index = c("城市shapefile", "year"), spatial.model = "lag", method = "ML")
+sphtest(x = formula0, data = ct_spdata_long, listw = listw4nn, index = c("城市shapefile", "year"), spatial.model = "lag", method = "ML")
 ```
+
+1. These tests are panel versions of the locally robust LM test for spatial dependence of Anselin (1996).
+```{r}
+slmtest(formula = formula0, data = ct_spdata_long, listw = listw4nn, index = c("城市shapefile", "year"), model = "within", test = "rlme")
+```
+```{r}
+slmtest(formula = formula0, data = ct_spdata_long, listw = listw4nn, index = c("城市shapefile", "year"), model = "within", test = "rlml")
+```
+
+This points us to the spatial lag model.
 
 ## Test for different combinations of explanatory variables
 
@@ -188,6 +251,47 @@ sphtest(x = formula1, data = ct_spdata_long, listw = listw8nn, index = c("城市
 
 
 ## Panel regressions
+
+### Maximum likelihood estimation, pooled, lag model
+
+```{r}
+preg0 <- spml(formula = formula0, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, model = "pool", lag = TRUE, spatial.error = "none")
+summary(preg0)
+```
+
+### Maximum likelihood estimation, FE individual, lag model
+
+```{r}
+preg1_fe <- spml(formula = formula4, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, model = "within", effect = "individual", lag = TRUE, spatial.error = "none")
+preg1_re <- spml(formula = formula4, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, model = "random",  effect = "individual", lag = TRUE, spatial.error = "none")
+## try error model and be prepared for weird results
+summary(preg1_fe)
+summary(preg1_re)
+```
+
+### GM, pooled, lag model, FE individual
+
+# ```{r}
+# preg2_fe <- spgm(formula = formula4, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, lag = TRUE, spatial.error = FALSE,  model = "within",  verbose = TRUE,  endog = ~ log(1+tavexp), instruments = ~log(1+hprice) + log(1+emphotel) + log(1+taxi))
+# ##, endog = ~ log(1+tavexp), instruments = ~log(1+hprice))
+# 
+# preg2_re <- spgm(formula = formula4, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, lag = TRUE, spatial.error = FALSE,  model = "random")
+# ##  
+# summary(preg2_fe)
+# summary(preg2_re)
+# ```
+
+
+### Hausman test
+```{r}
+sphtest(preg1_fe, preg1_re)
+sphtest(preg2_fe, preg2_re)
+```
+## effects
+```{r}
+spatialreg::impacts(preg1_fe, listw = listw4nn, time = 9)
+```
+
 
 
 ## Two regime panel models with fixed effects: an attemption
