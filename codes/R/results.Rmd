@@ -262,36 +262,37 @@ summary(preg0)
 ### Maximum likelihood estimation, FE individual, lag model
 
 ```{r}
-preg1_fe <- spml(formula = formula4, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, model = "within", effect = "individual", lag = TRUE, spatial.error = "none")
-preg1_re <- spml(formula = formula4, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, model = "random",  effect = "individual", lag = TRUE, spatial.error = "none")
+preg1_fe <- spml(formula = formula5, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, model = "within", effect = "individual", lag = TRUE, spatial.error = "none")
+preg1_re <- spml(formula = formula5, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, model = "random",  effect = "individual", lag = TRUE, spatial.error = "none")
 ## try error model and be prepared for weird results
 summary(preg1_fe)
 summary(preg1_re)
 ```
 
 ### GM, pooled, lag model, FE individual
-
-# ```{r}
-# preg2_fe <- spgm(formula = formula4, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, lag = TRUE, spatial.error = FALSE,  model = "within",  verbose = TRUE,  endog = ~ log(1+tavexp), instruments = ~log(1+hprice) + log(1+emphotel) + log(1+taxi))
-# ##, endog = ~ log(1+tavexp), instruments = ~log(1+hprice))
+```{r}
+# preg2_fe <- spgm(formula = formula5, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, lag = TRUE, spatial.error = FALSE,  model = "within",  endog = ~ log(1+tavexp), instruments = ~log(1+hprice) + log(1+emphotel) + log(1+taxi))
 # 
-# preg2_re <- spgm(formula = formula4, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, lag = TRUE, spatial.error = FALSE,  model = "random")
-# ##  
-# summary(preg2_fe)
-# summary(preg2_re)
-# ```
-
+#  preg2_fe <- spgm(formula = formula5, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, lag = TRUE, spatial.error = TRUE,  model = "within")
+# 
+#  preg2_re <- spgm(formula = formula4, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, lag = TRUE, spatial.error = FALSE,  model = "random")
+```
 
 ### Hausman test
 ```{r}
 sphtest(preg1_fe, preg1_re)
-sphtest(preg2_fe, preg2_re)
+## sphtest(preg2_fe, preg2_re)
 ```
 ## effects
 ```{r}
 spatialreg::impacts(preg1_fe, listw = listw4nn, time = 9)
 ```
 
+## Huge problem
+```{r}
+weird_sarar_fe <- spml(formula = formula5, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, model = "within", effect = "individual", lag = TRUE, spatial.error = "b")
+summary(weird_sarar_fe)
+```
 
 
 ## Two regime panel models with fixed effects: an attemption
