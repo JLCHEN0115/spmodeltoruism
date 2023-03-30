@@ -229,7 +229,6 @@ formula4 <- log(1+tarl) ~ log(1 + GDPpc) + pslry + log(1+invest) + log(1+hotel) 
 5. **combo5**:
 We pick all the significant variables above. (including `log(1 + tavexp)`)
 ```{r}
-pslry <- pdata.frame(ct_spdata_long, c("城市shapefile", "year"))$slry
 
 formula5 <- log(1+tarl) ~ log(1 + tavexp) + log(1 + GDPpc) + log(1 + slag(pslry, listw = listw4nn)) + log(1+invest) + log(1+hotel) + log(1+spot5A) + log(1+scenum) + log(1+pop) + log(1+bus)
 ```
