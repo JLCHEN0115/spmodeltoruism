@@ -70,7 +70,7 @@ ct_spdata_long %<>%
 sum(is.na(ct_spdata_long))
 
 ## set tell R it is a panel
-pdata.frame(ct_spdata_long, index = c("城市shapefile", "year"))
+ct_spdata_long <- pdata.frame(ct_spdata_long, index = c("城市shapefile", "year"))
 ## summarize the data
 summary(ct_spdata_long)
 ```
@@ -154,19 +154,42 @@ Create spatial lagged variables.
 ```{r}
 ## Create spatial lag for some variables
 
-lagGDPpc <- slag(pdata.frame(ct_spdata_long, index = c("城市shapefile", "year"))$GDPpc, listw = listw4nn) %>% as.numeric( )
+lagGDPpc <- slag(ct_spdata_long$GDPpc, listw = listw4nn) %>% as.numeric( )
 
 ct_spdata_long$lagGDPpc <- lagGDPpc
 
-lagslry <- slag(pdata.frame(ct_spdata_long, index = c("城市shapefile", "year"))$slry, listw = listw4nn) %>% as.numeric( )
+lagslry <- slag(ct_spdata_long$slry, listw = listw4nn) %>% as.numeric( )
 
 ct_spdata_long$lagslry <- lagslry
 
-lagtarl <- slag(pdata.frame(ct_spdata_long, index = c("城市shapefile", "year"))$tarl, listw = listw4nn) %>% as.numeric( )
+lagtarl <- slag(ct_spdata_long$tarl, listw = listw4nn) %>% as.numeric( )
 
 ct_spdata_long$lagtarl <- lagtarl
 ```
 
+Output data and weight matrix for testing two regime codes in MATLAB
+
+```{r}
+# ## Create indicators
+# ct_spdata_long <- ct_spdata_long %>%
+#   mutate(
+#     indicator = case_when(
+#      tarl >= lagtarl ~  1,
+#      tarl < lagtarl ~ 0
+#     )
+#   )
+# 
+# ## output data file 
+# ct_spdata_long %>%
+#   as.data.frame() %>%
+#   select(!geometry) %>%
+#   arrange(year, 城市shapefile)  %>%
+# write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/ct_spdata_long.xlsx")
+# 
+# ## output weight matrix (4nn)
+# matrix4nn %>% as.data.frame() %>% write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/4nnmatrix.xlsx")
+
+```
 
 ## Moran's I for panel data
 
@@ -199,9 +222,8 @@ formula2 <- log(1+tarl) ~ log(1 + tavexp) + log(1 + slry) + log(1+forncap) + log
 4. **combo4**:
 We pick all the significant variables above. (excluding `log(1 + tavexp)`)
 ```{r}
-pslry <- pdata.frame(ct_spdata_long, c("城市shapefile", "year"))$slry
-
-formula4 <- log(1+tarl) ~ log(1 + GDPpc) + log(1 + slag(pslry, listw = listw4nn)) + log(1+invest) + log(1+hotel) + log(1+spot5A)+ log(1+scenum) + log(1+pop) + log(1+bus)
+pslry <- slag(log(1 + ct_spdata_long$slry), listw = listw4nn)
+formula4 <- log(1+tarl) ~ log(1 + GDPpc) + pslry + log(1+invest) + log(1+hotel) + log(1+spot5A)+ log(1+scenum) + log(1+pop) + log(1+bus)
 ```
 
 5. **combo5**:
@@ -262,7 +284,9 @@ summary(preg0)
 ### Maximum likelihood estimation, FE individual, lag model
 
 ```{r}
-preg1_fe <- spml(formula = formula5, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, model = "within", effect = "individual", lag = TRUE, spatial.error = "none")
+##index = c("城市shapefile", "year")
+preg1_fe <- spml(formula = formula4, data = ct_spdata_long, listw = listw4nn, model = "within", effect = "individual", lag = TRUE, spatial.error = "none")
+
 preg1_re <- spml(formula = formula5, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, model = "random",  effect = "individual", lag = TRUE, spatial.error = "none")
 ## try error model and be prepared for weird results
 summary(preg1_fe)
