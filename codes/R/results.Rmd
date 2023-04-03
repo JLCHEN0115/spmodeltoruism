@@ -170,15 +170,15 @@ ct_spdata_long$lagtarl <- lagtarl
 Output data and weight matrix for testing two regime codes in MATLAB
 
 ```{r}
-# ## Create indicators
-# ct_spdata_long <- ct_spdata_long %>%
-#   mutate(
-#     indicator = case_when(
-#      tarl >= lagtarl ~  1,
-#      tarl < lagtarl ~ 0
-#     )
-#   )
-# 
+ ## Create indicators
+ ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator = case_when(
+      tarl >= lagtarl ~  1,
+      tarl < lagtarl ~ 0
+     )
+   )
+ 
 # ## output data file 
 # ct_spdata_long %>%
 #   as.data.frame() %>%
@@ -191,7 +191,6 @@ Output data and weight matrix for testing two regime codes in MATLAB
 
 ```
 
-## Moran's I for panel data
 
 ## Model tests
 
