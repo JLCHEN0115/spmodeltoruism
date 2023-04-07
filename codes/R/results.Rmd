@@ -75,6 +75,7 @@ ct_spdata_long <- pdata.frame(ct_spdata_long, index = c("城市shapefile", "year
 summary(ct_spdata_long)
 ```
 
+
 ### Data description
 
 Our data sets contains the data for 283 prefectual-level cities in China from 2011-2019. The following variables are included. 
@@ -165,26 +166,113 @@ ct_spdata_long$lagslry <- lagslry
 lagtarl <- slag(ct_spdata_long$tarl, listw = listw4nn) %>% as.numeric( )
 
 ct_spdata_long$lagtarl <- lagtarl
+
+laghotel <- slag(ct_spdata_long$hotel, listw = listw4nn) %>% as.numeric( )
+
+ct_spdata_long$laghotel <- laghotel
+
+lagspot5A <- slag(ct_spdata_long$spot5A, listw = listw4nn) %>% as.numeric( )
+
+ct_spdata_long$lagspot5A <- lagspot5A
+
+lagterti<- slag(ct_spdata_long$terti, listw = listw4nn) %>% as.numeric( )
+
+ct_spdata_long$lagterti <- lagterti
 ```
 
-Output data and weight matrix for testing two regime codes in MATLAB
+## Prepate data for MATLAB
 
 ```{r}
- ## Create indicators
- ct_spdata_long <- ct_spdata_long %>%
+tlaged_logged_ct_spdata_long <- ct_spdata_long
+
+## Use the independent variables from the previous year
+for (i in 7:ncol(tlaged_logged_ct_spdata_long)) {
+  tlaged_logged_ct_spdata_long[[i]] <- lag(tlaged_logged_ct_spdata_long[[i]], 1)
+}
+summary(tlaged_logged_ct_spdata_long)
+## Drop all observations with missing values 
+tlaged_logged_ct_spdata_long <- na.omit(tlaged_logged_ct_spdata_long)
+
+## Transfer all variables to log scale
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+  mutate(across(c(tarl:inrev, hprice:road, invest:lagspot5A), \(x) log(x+1)))
+
+summary(tlaged_logged_ct_spdata_long)
+
+```
+  
+## Create indicators using different variables
+```{r}
+## Create indicators using total arrivals
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
    mutate(
-     indicator = case_when(
+     indicator_tarl = case_when(
       tarl >= lagtarl ~  1,
       tarl < lagtarl ~ 0
      )
    )
+
+## Create indicators using GDP per capita
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+   mutate(
+     indicator_gdp = case_when(
+      GDPpc >= lagGDPpc ~  1,
+      GDPpc < lagGDPpc ~ 0
+     )
+   )
+
+## Create indicators using number of hotels
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+   mutate(
+     indicator_hotel = case_when(
+      hotel >= laghotel ~  1,
+      hotel < laghotel ~ 0
+     )
+   )
+
+## Create indicators using number of 5A spots
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+   mutate(
+     indicator_5A = case_when(
+      spot5A >= lagspot5A ~  1,
+      spot5A < lagspot5A ~ 0
+     )
+   )
+
+## Create indicators using third industry development level
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+   mutate(
+     indicator_terti = case_when(
+      terti >= lagterti ~  1,
+      terti < lagterti ~ 0
+     )
+   )
+
+summary(tlaged_logged_ct_spdata_long)
+```
+
+
+```{r}
+library(xlsx)
+
+ tlaged_logged_ct_spdata_long %>%
+   as.data.frame() %>%
+   select(!geometry) %>%
+   arrange(year, 城市shapefile)  %>%
+ xlsx::write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/tlaged_logged_ct_spdata_long.xlsx")
  
+ ## output weight matrix (4nn)
+ matrix4nn %>% as.data.frame() %>% write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/4nnmatrix.xlsx")
+```
+ 
+
 # ## output data file 
-# ct_spdata_long %>%
+# library(xlsx)
+# tlaged_logged_ct_spdata_long %>%
 #   as.data.frame() %>%
 #   select(!geometry) %>%
 #   arrange(year, 城市shapefile)  %>%
-# write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/ct_spdata_long.xlsx")
+# write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/tlaged_logged_ct_spdata_long.xlsx")
 # 
 # ## output weight matrix (4nn)
 # matrix4nn %>% as.data.frame() %>% write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/4nnmatrix.xlsx")

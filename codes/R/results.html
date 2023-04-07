@@ -611,42 +611,407 @@ ct_spdata_long$lagslry &lt;- lagslry
 
 lagtarl &lt;- slag(ct_spdata_long$tarl, listw = listw4nn) %&gt;% as.numeric( )
 
-ct_spdata_long$lagtarl &lt;- lagtarl</code></pre>
-<p>Output data and weight matrix for testing two regime codes in
-MATLAB</p>
-<pre class="r"><code># ## Create indicators
-# ct_spdata_long &lt;- ct_spdata_long %&gt;%
-#   mutate(
-#     indicator = case_when(
-#      tarl &gt;= lagtarl ~  1,
-#      tarl &lt; lagtarl ~ 0
-#     )
-#   )
-# 
-# ## output data file 
-# ct_spdata_long %&gt;%
-#   as.data.frame() %&gt;%
-#   select(!geometry) %&gt;%
-#   arrange(year, 城市shapefile)  %&gt;%
-# write.xlsx2(&quot;/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/ct_spdata_long.xlsx&quot;)
-# 
-# ## output weight matrix (4nn)
-# matrix4nn %&gt;% as.data.frame() %&gt;% write.xlsx2(&quot;/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/4nnmatrix.xlsx&quot;)</code></pre>
+ct_spdata_long$lagtarl &lt;- lagtarl
+
+laghotel &lt;- slag(ct_spdata_long$hotel, listw = listw4nn) %&gt;% as.numeric( )
+
+ct_spdata_long$laghotel &lt;- laghotel
+
+lagspot5A &lt;- slag(ct_spdata_long$spot5A, listw = listw4nn) %&gt;% as.numeric( )
+
+ct_spdata_long$lagspot5A &lt;- lagspot5A
+
+lagterti&lt;- slag(ct_spdata_long$terti, listw = listw4nn) %&gt;% as.numeric( )
+
+ct_spdata_long$lagterti &lt;- lagterti</code></pre>
 </div>
 </div>
-<div id="morans-i-for-panel-data" class="section level2">
-<h2>Moran’s I for panel data</h2>
+<div id="prepate-data-for-matlab" class="section level2">
+<h2>Prepate data for MATLAB</h2>
+<pre class="r"><code>tlaged_logged_ct_spdata_long &lt;- ct_spdata_long
+
+## Use the independent variables from the previous year
+for (i in 7:ncol(tlaged_logged_ct_spdata_long)) {
+  tlaged_logged_ct_spdata_long[[i]] &lt;- lag(tlaged_logged_ct_spdata_long[[i]], 1)
+}
+summary(tlaged_logged_ct_spdata_long)</code></pre>
+<pre><code>##    城市shapefile      City                Lat             Long      
+##  三亚市   :   9   Length:2547        Min.   :18.26   Min.   : 84.9  
+##  三明市   :   9   Class :character   1st Qu.:27.83   1st Qu.:109.5  
+##  三门峡市 :   9   Mode  :character   Median :32.40   Median :114.3  
+##  上海|上海:   9                      Mean   :32.80   Mean   :113.9  
+##  上饶市   :   9                      3rd Qu.:37.52   3rd Qu.:118.5  
+##  东莞市   :   9                      Max.   :50.25   Max.   :131.2  
+##  (Other)  :2493                                                     
+##           geometry         year               tarl          
+##  MULTIPOLYGON :2547   2011   :283   total       :4.217e+12  
+##  epsg:4326    :   0   2012   :283   between_id  :3.648e+12  
+##  +proj=long...:   0   2013   :283   between_time:2.817e+11  
+##                       2014   :283                           
+##                       2015   :283                           
+##                       2016   :283                           
+##                       (Other):849                           
+##            trev                    dmarl                    dmrev          
+##  total       :7.096e+12   total       :4.098e+12   total       :6.180e+12  
+##  between_id  :6.029e+12   between_id  :3.540e+12   between_id  :5.095e+12  
+##  between_time:4.920e+11   between_time:2.739e+11   between_time:4.687e+11  
+##                                                                            
+##                                                                            
+##                                                                            
+##                                                                            
+##           inarl                    inrev                    CPIpy       
+##  total       :2.926e+09   total       :1.224e+09   total       :1878.0  
+##  between_id  :2.883e+09   between_id  :1.184e+09   between_id  : 143.9  
+##  between_time:2.020e+06   between_time:2.221e+06   between_time:1300.7  
+##                                                                         
+##                                                                         
+##                                                                         
+##                                                                         
+##           CPI11                 hprice                  emphotel      
+##  total       :5.0462   total       :3.115e+10   total       :4065038  
+##  between_id  :0.3442   between_id  :2.603e+10   between_id  :3032891  
+##  between_time:4.5393   between_time:1.632e+09   between_time:   6213  
+##                                                                       
+##                                                                       
+##                                                                       
+##                                                                       
+##           GDPpc                     slry                     pop           
+##  total       :1.750e+12   total       :5.607e+11   total       :2.800e+10  
+##  between_id  :1.567e+12   between_id  :2.384e+11   between_id  :2.765e+10  
+##  between_time:9.592e+10   between_time:2.943e+11   between_time:9.999e+06  
+##                                                                            
+##                                                                            
+##                                                                            
+##                                                                            
+##            area                     road                    terti       
+##  total       :1.065e+12   total       :1.904e+10   total       :246417  
+##  between_id  :1.064e+12   between_id  :1.844e+10   between_id  :162468  
+##  between_time:7.127e+06   between_time:1.776e+08   between_time: 58584  
+##                                                                         
+##                                                                         
+##                                                                         
+##                                                                         
+##           invest                  forncap                    bus           
+##  total       :6.117e+17   total       :1.107e+14   total       :2.280e+10  
+##  between_id  :5.378e+17   between_id  :9.714e+13   between_id  :2.202e+10  
+##  between_time:2.554e+16   between_time:1.365e+11   between_time:7.685e+07  
+##                                                                            
+##                                                                            
+##                                                                            
+##                                                                            
+##            taxi                    hotel                  spot5A       
+##  total       :8.400e+10   total       :5247394   total       :2301.05  
+##  between_id  :8.304e+10   between_id  :4950007   between_id  :2056.05  
+##  between_time:1.809e+07   between_time:  10073   between_time:  39.75  
+##                                                                        
+##                                                                        
+##                                                                        
+##                                                                        
+##           scenum                  subnum                 grnld          
+##  total       :2305.329   total       :2899708   total       :5.604e+11  
+##  between_id  :2250.579   between_id  :2649955   between_id  :5.523e+11  
+##  between_time:   2.558   between_time:  15129   between_time:1.538e+09  
+##                                                                         
+##                                                                         
+##                                                                         
+##                                                                         
+##           tavexp                  dmavexp                  inavexp         
+##  total       :735526777   total       :695502785   total       :7.774e+10  
+##  between_id  :669079926   between_id  :622798975   between_id  :2.490e+10  
+##  between_time: 25399128   between_time: 25771852   between_time:3.862e+08  
+##                                                                            
+##                                                                            
+##                                                                            
+##                                                                            
+##          lagGDPpc                 lagslry                  lagtarl         
+##  total       :5.293e+11   total       :3.635e+11   total       :1.184e+12  
+##  between_id  :4.071e+11   between_id  :5.865e+10   between_id  :8.266e+11  
+##  between_time:1.031e+11   between_time:2.984e+11   between_time:2.932e+11  
+##                                                                            
+##                                                                            
+##                                                                            
+##                                                                            
+##          laghotel              lagspot5A              lagterti    
+##  total       :1301190   total       :595.60   total       :98577  
+##  between_id  :1230239   between_id  :500.24   between_id  :34302  
+##  between_time:  13122   between_time: 42.75   between_time:57875  
+##                                                                   
+##                                                                   
+##                                                                   
+## </code></pre>
+<pre class="r"><code>## Drop all observations with missing values 
+tlaged_logged_ct_spdata_long &lt;- na.omit(tlaged_logged_ct_spdata_long)
+
+## Transfer all variables to log scale
+tlaged_logged_ct_spdata_long &lt;- tlaged_logged_ct_spdata_long %&gt;%
+  mutate(across(c(tarl:inrev, hprice:road, invest:lagspot5A), \(x) log(x+1)))
+
+summary(tlaged_logged_ct_spdata_long)</code></pre>
+<pre><code>##    城市shapefile      City                Lat             Long      
+##  三亚市   :   8   Length:2264        Min.   :18.26   Min.   : 84.9  
+##  三明市   :   8   Class :character   1st Qu.:27.83   1st Qu.:109.5  
+##  三门峡市 :   8   Mode  :character   Median :32.40   Median :114.3  
+##  上海|上海:   8                      Mean   :32.80   Mean   :113.9  
+##  上饶市   :   8                      3rd Qu.:37.52   3rd Qu.:118.5  
+##  东莞市   :   8                      Max.   :50.25   Max.   :131.2  
+##  (Other)  :2216                                                     
+##           geometry         year          tarl             trev       
+##  MULTIPOLYGON :2264   2012   :283   Min.   : 6.830   Min.   : 6.134  
+##  epsg:4326    :   0   2013   :283   1st Qu.: 9.415   1st Qu.: 9.211  
+##  +proj=long...:   0   2014   :283   Median :10.022   Median : 9.914  
+##                       2015   :283   Mean   : 9.998   Mean   : 9.903  
+##                       2016   :283   3rd Qu.:10.654   3rd Qu.:10.643  
+##                       2017   :283   Max.   :13.300   Max.   :13.291  
+##                       (Other):566                                    
+##      dmarl            dmrev            inarl           inrev      
+##  Min.   : 6.830   Min.   : 5.168   Min.   :0.000   Min.   :0.001  
+##  1st Qu.: 9.401   1st Qu.: 9.199   1st Qu.:3.128   1st Qu.:2.169  
+##  Median :10.007   Median : 9.890   Median :4.347   Median :3.467  
+##  Mean   : 9.981   Mean   : 9.880   Mean   :4.333   Mean   :3.569  
+##  3rd Qu.:10.630   3rd Qu.:10.601   3rd Qu.:5.695   3rd Qu.:4.913  
+##  Max.   :13.294   Max.   :13.228   Max.   :9.408   Max.   :8.905  
+##                                                                   
+##      CPIpy            CPI11           hprice          emphotel     
+##  Min.   : 99.74   Min.   :1.000   Min.   : 7.457   Min.   :0.0373  
+##  1st Qu.:101.20   1st Qu.:1.033   1st Qu.: 8.133   1st Qu.:0.9626  
+##  Median :101.80   Median :1.077   Median : 8.331   Median :1.4781  
+##  Mean   :101.67   Mean   :1.075   Mean   : 8.426   Mean   :1.6905  
+##  3rd Qu.:102.30   3rd Qu.:1.112   3rd Qu.: 8.628   3rd Qu.:2.1282  
+##  Max.   :106.10   Max.   :1.198   Max.   :10.923   Max.   :6.4727  
+##                                                                    
+##      GDPpc             slry             pop              area       
+##  Min.   : 8.773   Min.   : 9.753   Min.   : 5.456   Min.   : 7.016  
+##  1st Qu.:10.269   1st Qu.:10.619   1st Qu.: 7.774   1st Qu.: 8.938  
+##  Median :10.636   Median :10.828   Median : 8.179   Median : 9.403  
+##  Mean   :10.648   Mean   :10.825   Mean   : 8.177   Mean   : 9.358  
+##  3rd Qu.:11.010   3rd Qu.:11.026   3rd Qu.: 8.635   3rd Qu.: 9.849  
+##  Max.   :12.281   Max.   :11.917   Max.   :10.362   Max.   :12.443  
+##                                                                     
+##       road            terti           invest         forncap      
+##  Min.   : 0.000   Min.   :10.15   Min.   :12.79   Min.   : 1.386  
+##  1st Qu.: 6.439   1st Qu.:33.53   1st Qu.:15.65   1st Qu.: 8.854  
+##  Median : 6.978   Median :39.63   Median :16.23   Median :10.093  
+##  Mean   : 7.084   Mean   :40.77   Mean   :16.23   Mean   : 9.990  
+##  3rd Qu.: 7.692   3rd Qu.:46.70   3rd Qu.:16.78   3rd Qu.:11.307  
+##  Max.   :10.318   Max.   :80.98   Max.   :18.98   Max.   :14.941  
+##                                                                   
+##       bus              taxi            hotel            spot5A      
+##  Min.   : 3.401   Min.   : 4.190   Min.   :0.6931   Min.   :0.0000  
+##  1st Qu.: 5.842   1st Qu.: 6.686   1st Qu.:2.9957   1st Qu.:0.0000  
+##  Median : 6.432   Median : 7.340   Median :3.4340   Median :0.0000  
+##  Mean   : 6.586   Mean   : 7.419   Mean   :3.4573   Mean   :0.3482  
+##  3rd Qu.: 7.189   3rd Qu.: 8.016   3rd Qu.:3.9416   3rd Qu.:0.6931  
+##  Max.   :10.564   Max.   :11.157   Max.   :6.4216   Max.   :2.1972  
+##                                                                     
+##      scenum           subnum           grnld            tavexp     
+##  Min.   :0.0000   Min.   :0.0000   Min.   : 2.678   Min.   :4.961  
+##  1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.: 7.595   1st Qu.:6.507  
+##  Median :0.0000   Median :0.0000   Median : 8.152   Median :6.780  
+##  Mean   :0.3855   Mean   :0.3218   Mean   : 8.269   Mean   :6.814  
+##  3rd Qu.:0.6931   3rd Qu.:0.0000   3rd Qu.: 8.816   3rd Qu.:7.078  
+##  Max.   :2.0794   Max.   :6.0307   Max.   :11.899   Max.   :8.722  
+##                                                                    
+##     dmavexp         inavexp          lagGDPpc         lagslry     
+##  Min.   :2.643   Min.   : 0.000   Min.   : 9.772   Min.   :10.18  
+##  1st Qu.:6.502   1st Qu.: 7.624   1st Qu.:10.550   1st Qu.:10.65  
+##  Median :6.769   Median : 7.923   Median :10.760   Median :10.84  
+##  Mean   :6.807   Mean   : 7.962   Mean   :10.757   Mean   :10.84  
+##  3rd Qu.:7.053   3rd Qu.: 8.326   3rd Qu.:10.968   3rd Qu.:11.03  
+##  Max.   :8.757   Max.   :12.329   Max.   :11.621   Max.   :11.52  
+##                                                                   
+##     lagtarl          laghotel       lagspot5A         lagterti    
+##  Min.   : 8.462   Min.   :2.526   Min.   :0.0000   Min.   :25.59  
+##  1st Qu.: 9.899   1st Qu.:3.384   1st Qu.:0.2231   1st Qu.:35.71  
+##  Median :10.284   Median :3.663   Median :0.4055   Median :40.07  
+##  Mean   :10.293   Mean   :3.678   Mean   :0.4310   Mean   :40.60  
+##  3rd Qu.:10.677   3rd Qu.:3.927   3rd Qu.:0.6931   3rd Qu.:45.24  
+##  Max.   :12.227   Max.   :5.324   Max.   :1.4469   Max.   :67.19  
+## </code></pre>
 </div>
-<div id="model-tests" class="section level2">
-<h2>Model tests</h2>
-<p>We will be using different combinations of explanatory variables for
-testing.</p>
-<p>We first pick some variables from each of the variables from its
-group we defined before. We use this as a base case.</p>
-<ol style="list-style-type: decimal">
-<li><strong>combo0</strong>:</li>
-</ol>
-<pre class="r"><code>formula0 &lt;- log(1+tarl) ~  log(1 + GDPpc) + log(1+invest) + log(1+hotel) + log(1+spot5A) + log(1+pop) + log(1+road)</code></pre>
+<div id="create-indicators-using-different-variables" class="section level2">
+<h2>Create indicators using different variables</h2>
+<pre class="r"><code>## Create indicators using total arrivals
+tlaged_logged_ct_spdata_long &lt;- tlaged_logged_ct_spdata_long %&gt;%
+   mutate(
+     indicator_tarl = case_when(
+      tarl &gt;= lagtarl ~  1,
+      tarl &lt; lagtarl ~ 0
+     )
+   )
+
+## Create indicators using GDP per capita
+tlaged_logged_ct_spdata_long &lt;- tlaged_logged_ct_spdata_long %&gt;%
+   mutate(
+     indicator_gdp = case_when(
+      GDPpc &gt;= lagGDPpc ~  1,
+      GDPpc &lt; lagGDPpc ~ 0
+     )
+   )
+
+## Create indicators using number of hotels
+tlaged_logged_ct_spdata_long &lt;- tlaged_logged_ct_spdata_long %&gt;%
+   mutate(
+     indicator_hotel = case_when(
+      hotel &gt;= laghotel ~  1,
+      hotel &lt; laghotel ~ 0
+     )
+   )
+
+## Create indicators using number of 5A spots
+tlaged_logged_ct_spdata_long &lt;- tlaged_logged_ct_spdata_long %&gt;%
+   mutate(
+     indicator_5A = case_when(
+      spot5A &gt;= lagspot5A ~  1,
+      spot5A &lt; lagspot5A ~ 0
+     )
+   )
+
+## Create indicators using third industry development level
+tlaged_logged_ct_spdata_long &lt;- tlaged_logged_ct_spdata_long %&gt;%
+   mutate(
+     indicator_terti = case_when(
+      terti &gt;= lagterti ~  1,
+      terti &lt; lagterti ~ 0
+     )
+   )
+
+summary(tlaged_logged_ct_spdata_long)</code></pre>
+<pre><code>##    城市shapefile      City                Lat             Long      
+##  三亚市   :   8   Length:2264        Min.   :18.26   Min.   : 84.9  
+##  三明市   :   8   Class :character   1st Qu.:27.83   1st Qu.:109.5  
+##  三门峡市 :   8   Mode  :character   Median :32.40   Median :114.3  
+##  上海|上海:   8                      Mean   :32.80   Mean   :113.9  
+##  上饶市   :   8                      3rd Qu.:37.52   3rd Qu.:118.5  
+##  东莞市   :   8                      Max.   :50.25   Max.   :131.2  
+##  (Other)  :2216                                                     
+##           geometry         year          tarl             trev       
+##  MULTIPOLYGON :2264   2012   :283   Min.   : 6.830   Min.   : 6.134  
+##  epsg:4326    :   0   2013   :283   1st Qu.: 9.415   1st Qu.: 9.211  
+##  +proj=long...:   0   2014   :283   Median :10.022   Median : 9.914  
+##                       2015   :283   Mean   : 9.998   Mean   : 9.903  
+##                       2016   :283   3rd Qu.:10.654   3rd Qu.:10.643  
+##                       2017   :283   Max.   :13.300   Max.   :13.291  
+##                       (Other):566                                    
+##      dmarl            dmrev            inarl           inrev      
+##  Min.   : 6.830   Min.   : 5.168   Min.   :0.000   Min.   :0.001  
+##  1st Qu.: 9.401   1st Qu.: 9.199   1st Qu.:3.128   1st Qu.:2.169  
+##  Median :10.007   Median : 9.890   Median :4.347   Median :3.467  
+##  Mean   : 9.981   Mean   : 9.880   Mean   :4.333   Mean   :3.569  
+##  3rd Qu.:10.630   3rd Qu.:10.601   3rd Qu.:5.695   3rd Qu.:4.913  
+##  Max.   :13.294   Max.   :13.228   Max.   :9.408   Max.   :8.905  
+##                                                                   
+##      CPIpy            CPI11           hprice          emphotel     
+##  Min.   : 99.74   Min.   :1.000   Min.   : 7.457   Min.   :0.0373  
+##  1st Qu.:101.20   1st Qu.:1.033   1st Qu.: 8.133   1st Qu.:0.9626  
+##  Median :101.80   Median :1.077   Median : 8.331   Median :1.4781  
+##  Mean   :101.67   Mean   :1.075   Mean   : 8.426   Mean   :1.6905  
+##  3rd Qu.:102.30   3rd Qu.:1.112   3rd Qu.: 8.628   3rd Qu.:2.1282  
+##  Max.   :106.10   Max.   :1.198   Max.   :10.923   Max.   :6.4727  
+##                                                                    
+##      GDPpc             slry             pop              area       
+##  Min.   : 8.773   Min.   : 9.753   Min.   : 5.456   Min.   : 7.016  
+##  1st Qu.:10.269   1st Qu.:10.619   1st Qu.: 7.774   1st Qu.: 8.938  
+##  Median :10.636   Median :10.828   Median : 8.179   Median : 9.403  
+##  Mean   :10.648   Mean   :10.825   Mean   : 8.177   Mean   : 9.358  
+##  3rd Qu.:11.010   3rd Qu.:11.026   3rd Qu.: 8.635   3rd Qu.: 9.849  
+##  Max.   :12.281   Max.   :11.917   Max.   :10.362   Max.   :12.443  
+##                                                                     
+##       road            terti           invest         forncap      
+##  Min.   : 0.000   Min.   :10.15   Min.   :12.79   Min.   : 1.386  
+##  1st Qu.: 6.439   1st Qu.:33.53   1st Qu.:15.65   1st Qu.: 8.854  
+##  Median : 6.978   Median :39.63   Median :16.23   Median :10.093  
+##  Mean   : 7.084   Mean   :40.77   Mean   :16.23   Mean   : 9.990  
+##  3rd Qu.: 7.692   3rd Qu.:46.70   3rd Qu.:16.78   3rd Qu.:11.307  
+##  Max.   :10.318   Max.   :80.98   Max.   :18.98   Max.   :14.941  
+##                                                                   
+##       bus              taxi            hotel            spot5A      
+##  Min.   : 3.401   Min.   : 4.190   Min.   :0.6931   Min.   :0.0000  
+##  1st Qu.: 5.842   1st Qu.: 6.686   1st Qu.:2.9957   1st Qu.:0.0000  
+##  Median : 6.432   Median : 7.340   Median :3.4340   Median :0.0000  
+##  Mean   : 6.586   Mean   : 7.419   Mean   :3.4573   Mean   :0.3482  
+##  3rd Qu.: 7.189   3rd Qu.: 8.016   3rd Qu.:3.9416   3rd Qu.:0.6931  
+##  Max.   :10.564   Max.   :11.157   Max.   :6.4216   Max.   :2.1972  
+##                                                                     
+##      scenum           subnum           grnld            tavexp     
+##  Min.   :0.0000   Min.   :0.0000   Min.   : 2.678   Min.   :4.961  
+##  1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.: 7.595   1st Qu.:6.507  
+##  Median :0.0000   Median :0.0000   Median : 8.152   Median :6.780  
+##  Mean   :0.3855   Mean   :0.3218   Mean   : 8.269   Mean   :6.814  
+##  3rd Qu.:0.6931   3rd Qu.:0.0000   3rd Qu.: 8.816   3rd Qu.:7.078  
+##  Max.   :2.0794   Max.   :6.0307   Max.   :11.899   Max.   :8.722  
+##                                                                    
+##     dmavexp         inavexp          lagGDPpc         lagslry     
+##  Min.   :2.643   Min.   : 0.000   Min.   : 9.772   Min.   :10.18  
+##  1st Qu.:6.502   1st Qu.: 7.624   1st Qu.:10.550   1st Qu.:10.65  
+##  Median :6.769   Median : 7.923   Median :10.760   Median :10.84  
+##  Mean   :6.807   Mean   : 7.962   Mean   :10.757   Mean   :10.84  
+##  3rd Qu.:7.053   3rd Qu.: 8.326   3rd Qu.:10.968   3rd Qu.:11.03  
+##  Max.   :8.757   Max.   :12.329   Max.   :11.621   Max.   :11.52  
+##                                                                   
+##     lagtarl          laghotel       lagspot5A         lagterti    
+##  Min.   : 8.462   Min.   :2.526   Min.   :0.0000   Min.   :25.59  
+##  1st Qu.: 9.899   1st Qu.:3.384   1st Qu.:0.2231   1st Qu.:35.71  
+##  Median :10.284   Median :3.663   Median :0.4055   Median :40.07  
+##  Mean   :10.293   Mean   :3.678   Mean   :0.4310   Mean   :40.60  
+##  3rd Qu.:10.677   3rd Qu.:3.927   3rd Qu.:0.6931   3rd Qu.:45.24  
+##  Max.   :12.227   Max.   :5.324   Max.   :1.4469   Max.   :67.19  
+##                                                                   
+##  indicator_tarl   indicator_gdp    indicator_hotel   indicator_5A   
+##  Min.   :0.0000   Min.   :0.0000   Min.   :0.0000   Min.   :0.0000  
+##  1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:0.0000  
+##  Median :0.0000   Median :0.0000   Median :0.0000   Median :0.0000  
+##  Mean   :0.3754   Mean   :0.4117   Mean   :0.3869   Mean   :0.4748  
+##  3rd Qu.:1.0000   3rd Qu.:1.0000   3rd Qu.:1.0000   3rd Qu.:1.0000  
+##  Max.   :1.0000   Max.   :1.0000   Max.   :1.0000   Max.   :1.0000  
+##                                                                     
+##  indicator_terti 
+##  Min.   :0.0000  
+##  1st Qu.:0.0000  
+##  Median :0.0000  
+##  Mean   :0.4532  
+##  3rd Qu.:1.0000  
+##  Max.   :1.0000  
+## </code></pre>
+</div>
+<div id="output-data-file" class="section level1">
+<h1>## output data file</h1>
+</div>
+<div id="ct_spdata_long" class="section level1">
+<h1>ct_spdata_long %&gt;%</h1>
+</div>
+<div id="as.data.frame" class="section level1">
+<h1>as.data.frame() %&gt;%</h1>
+</div>
+<div id="selectgeometry" class="section level1">
+<h1>select(!geometry) %&gt;%</h1>
+</div>
+<div id="arrangeyear-城市shapefile" class="section level1">
+<h1>arrange(year, 城市shapefile) %&gt;%</h1>
+</div>
+<div id="write.xlsx2usersjialiangchendocumentsspmodeltoruismcodestworegimect_spdata_long.xlsx" class="section level1">
+<h1>write.xlsx2(“/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/ct_spdata_long.xlsx”)</h1>
+</div>
+<div id="section" class="section level1">
+<h1></h1>
+</div>
+<div id="output-weight-matrix-4nn" class="section level1">
+<h1>## output weight matrix (4nn)</h1>
+</div>
+<div id="matrix4nn-as.data.frame-write.xlsx2usersjialiangchendocumentsspmodeltoruismcodestworegime4nnmatrix.xlsx" class="section level1">
+<h1>matrix4nn %&gt;% as.data.frame() %&gt;%
+write.xlsx2(“/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/4nnmatrix.xlsx”)</h1>
+<pre><code>
+
+## Model tests
+
+We will be using different combinations of explanatory variables for testing.
+
+We first pick some variables from each of the variables from its group we defined before. We use this as a base case.
+
+1. **combo0**:
+
+```r
+formula0 &lt;- log(1+tarl) ~  log(1 + GDPpc) + log(1+invest) + log(1+hotel) + log(1+spot5A) + log(1+pop) + log(1+road)</code></pre>
 <ol start="2" style="list-style-type: decimal">
 <li><strong>combo1</strong>:</li>
 </ol>
@@ -669,7 +1034,6 @@ formula4 &lt;- log(1+tarl) ~ log(1 + GDPpc) + pslry + log(1+invest) + log(1+hote
 above. (including <code>log(1 + tavexp)</code>)</li>
 </ol>
 <pre class="r"><code>formula5 &lt;- log(1+tarl) ~ log(1 + tavexp) + log(1 + GDPpc) + log(1 + slag(pslry, listw = listw4nn)) + log(1+invest) + log(1+hotel) + log(1+spot5A) + log(1+scenum) + log(1+pop) + log(1+bus)</code></pre>
-</div>
 <div id="test-for-spatial-dependence" class="section level2">
 <h2>Test for spatial dependence</h2>
 <p><span class="math inline">\(H_{0}:\)</span> No random effect, no
@@ -937,6 +1301,7 @@ summary(weird_sarar_fe)</code></pre>
 </div>
 <div id="summary" class="section level2">
 <h2>Summary</h2>
+</div>
 </div>
 
 
