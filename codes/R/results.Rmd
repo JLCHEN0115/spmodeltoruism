@@ -245,6 +245,48 @@ tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
      )
    )
 
+## percentage GDP gap
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+   mutate(GDP_percent = (GDPpc - lagGDPpc) / lagGDPpc)
+
+summary(tlaged_logged_ct_spdata_long$GDP_percent)
+
+## -10 prcent GDP
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+   mutate(
+     indicator_gdpne10 = case_when(
+      GDP_percent >= -0.10 ~  1,
+      GDP_percent < -0.10 ~ 0
+     )
+   )
+
+## -5 prcent GDP
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+   mutate(
+     indicator_gdpne5 = case_when(
+      GDP_percent >= -0.05 ~  1,
+      GDP_percent < -0.05 ~ 0
+     )
+   )
+
+## 5 prcent GDP
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+   mutate(
+     indicator_gdpps5 = case_when(
+      GDP_percent >= 0.05 ~  1,
+      GDP_percent < 0.05 ~ 0
+     )
+   )
+
+## 10 prcent GDP
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+   mutate(
+     indicator_gdpps10 = case_when(
+      GDP_percent >= 0.1 ~  1,
+      GDP_percent < 0.1 ~ 0
+     )
+   )
+
 ## Create indicators using number of hotels
 tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
    mutate(
@@ -279,7 +321,7 @@ summary(tlaged_logged_ct_spdata_long)
 ```{r}
 library(xlsx)
 
- tlaged_logged_ct_spdata_long %>%
+tlaged_logged_ct_spdata_long %>%
    as.data.frame() %>%
    select(!geometry) %>%
    arrange(year, 城市shapefile)  %>%
