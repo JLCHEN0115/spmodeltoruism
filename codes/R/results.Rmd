@@ -287,6 +287,33 @@ tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
      )
    )
 
+## [-0.05, 0] percent GDP
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+   mutate(
+     indicator_gdpne5to0 = case_when(
+      GDP_percent >= -0.05 & GDP_percent <= 0 ~  1,
+      GDP_percent < -0.05 | GDP_percent > 0  ~ 0
+     )
+   )
+
+## [0, 0.05] percent GDP
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+   mutate(
+     indicator_gdp0tops5 = case_when(
+      GDP_percent >= 0 & GDP_percent <= 0.05 ~  1,
+      GDP_percent < 0 | GDP_percent > 0.05  ~ 0
+     )
+   )
+
+## (0.05, 0.1) percent GDP
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+   mutate(
+     indicator_gdpps5to10 = case_when(
+      GDP_percent >= 0.05 & GDP_percent <= 0.1 ~  1,
+      GDP_percent < 0.05 | GDP_percent > 0.1  ~ 0
+     )
+   )
+
 ## Create indicators using number of hotels
 tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
    mutate(
