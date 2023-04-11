@@ -195,8 +195,8 @@ bd2 = AI\(xwith'*wywith2);
 e0 = ywith - xwith*b0;
 ed1 = wywith1 - xwith*bd1;
 ed2 = wywith2 - xwith*bd2;
-options = optimset('fminbnd');
-rhos=[0.1;0.1];
+options = optimset('fminsearch');
+rhos=[0;0];
 
 [rhos,liktmp,exitflag,output]= fminsearch('f_sar2_panel',rhos,options,index,W,e0,ed1,ed2,N,T);
 

@@ -105,48 +105,72 @@ We first construct a weighting matrix using 8 nearest neighbors. The optimal num
 ### Weighting matrix
 
 ```{r, results="hide"}
+## deprecated. 8nn may be too large.
 ## Identify coordinates of the centroid of the multipolygon
-coords <- st_centroid(st_geometry(ct_spdata_wide))
+## coords <- st_centroid(st_geometry(ct_spdata_wide))
 
 ## Create our 8 NN matrix
 ## Note that the latitude and longitude are handled using great circle distances
 ## R2 distances will be inaccurate
-knn8W <- knearneigh(coords, k = 8)
+## knn8W <- knearneigh(coords, k = 8)
 
 ## Convert our knn object to neighborhood list
-list8nn <- knn2nb(knn8W)
+## list8nn <- knn2nb(knn8W)
 ## Convert to a matrix object
-matrix8nn <- spdep::nb2mat(list8nn)
+## matrix8nn <- spdep::nb2mat(list8nn)
 ## Convert our neighborhood list to an listw object
-listw8nn <- spdep::nb2listw(list8nn) 
+## listw8nn <- spdep::nb2listw(list8nn) 
 ## Plot the neighborhood relationships
-plot(list8nn, coords)
+## plot(list8nn, coords)
 ```
 
 ```{r, results="hide"}
 ## Identify coordinates of the centroid of the multipolygon
 coords <- st_centroid(st_geometry(ct_spdata_wide))
 
-## Create our 4 NN matrix
+## Create our 3,4,5,6 NN matrix
 ## Note that the latitude and longitude are handled using great circle distances
 ## R2 distances will be inaccurate
+knn3W <- knearneigh(coords, k = 3)
 knn4W <- knearneigh(coords, k = 4)
+knn5W <- knearneigh(coords, k = 5)
+knn6W <- knearneigh(coords, k = 6)
 
-## Convert our knn object to neighborhood list
+## Convert our knn objects to neighborhood list
+list3nn <- knn2nb(knn3W)
 list4nn <- knn2nb(knn4W)
+list5nn <- knn2nb(knn5W)
+list6nn <- knn2nb(knn6W)
+
 ## Convert to a matrix object
+matrix3nn <- spdep::nb2mat(list3nn)
 matrix4nn <- spdep::nb2mat(list4nn)
+matrix5nn <- spdep::nb2mat(list5nn)
+matrix6nn <- spdep::nb2mat(list6nn)
+
 ## Convert our neighborhood list to an listw object
 listw4nn <- spdep::nb2listw(list4nn) 
 ## Plot the neighborhood relationships
-plot(list4nn, coords)
+# plot(list4nn, coords)
 ```
 
+```{r}
+## Neighbourhood contiguity by distance
+d100nb <- dnearneigh(coords, 0, 100)
+d150nb <- dnearneigh(coords, 0, 150)
+d200nb <- dnearneigh(coords, 0, 200)
+summary(d200nb)
+
+## convert them to matrix
+d100nb %>% spdep::nb2mat(zero.policy = TRUE) -> matrixd100nb
+d150nb %>% spdep::nb2mat(zero.policy = TRUE) -> matrixd150nb
+d200nb %>% spdep::nb2mat(zero.policy = TRUE) -> matrixd200nb
+```
 
 ```{r}
 ## Create another weighting matrix based on contiguity relations (queen).
 ct_spdata_wide %>% spdep::poly2nb("geometry") %>% 
-  spdep::nb2mat(zero.policy = TRUE) -> matrixWnb
+  spdep::nb2mat(zero.policy = TRUE) -> matrixcont
 
 ct_spdata_wide %>% spdep::poly2nb("geometry") %>%  spdep::nb2listw(zero.policy = TRUE) -> listwnb
 ```
@@ -274,9 +298,8 @@ library(xlsx)
 #   arrange(year, 城市shapefile)  %>%
 # write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/tlaged_logged_ct_spdata_long.xlsx")
 # 
-# ## output weight matrix (4nn)
+# ## output weight matrix (4nn as an example)
 # matrix4nn %>% as.data.frame() %>% write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/4nnmatrix.xlsx")
-
 ```
 
 

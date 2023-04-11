@@ -1,0 +1,434 @@
+---
+title: "results"
+author: "Jialiang"
+date: "2023-03-27"
+output: html_document
+---
+
+## Preparation
+
+### R setup
+
+Load the packages we will be using in this document.
+```{r pkgs}
+## Load and install the R packages we might will be using.
+pacman::p_load(sf, tidyverse, magrittr, data.table, hrbrthemes, zoo, GWmodel, spatialreg, spdep, plm, splm, pspatreg, zoo, chatgpt)
+```
+
+Some data wrangling work.
+```{r }
+# Replace the absolute path of the `cities_included.shp` file on your computer. 
+# Drag the file to terminal (command + space, then search `terminal` on spotlight) if you are in mac, the path will appear.
+ct_shape <- st_read("/Users/jialiangchen/Documents/spmodeltoruism/shapefiles/east/east.shp")
+## Import more data.
+## change the absolute path on your computer, same as above
+ct_data <- read.csv("/Users/jialiangchen/Documents/spmodeltoruism/data/dataforR.csv")
+## Perform a left join for our datasets.
+ct_spdata_wide <- left_join(
+  ct_shape %>% select(NL_NAME_2, geometry) %>% rename(城市shapefile = NL_NAME_2),  
+  ct_data,
+  by = "城市shapefile"
+)
+
+## Reshape our data to long(tidy) form.
+ct_spdata_long <- ct_spdata_wide %>% 
+  pivot_longer(
+    cols = tarl_2011:grnld_2019,
+    names_to = c(".value", "year"),
+    names_pattern = "(.+)_(.+)"
+  )
+
+## Create average tourist expenditure variable in RMBs
+ct_spdata_long %<>% 
+  mutate(
+    tavexp =  (trev/tarl)*1000,
+    dmavexp = (dmrev/dmarl)*1000
+  )
+
+## Some place has zero international arrival
+## Avoid division by zero
+ct_spdata_long %<>% 
+  mutate(
+    inavexp = case_when(
+     inarl > 0 ~  (inrev/inarl)*7*1000,
+     inarl == 0 ~  0
+    )
+  )
+
+
+## Create average tourist expenditure variable in RMBs## Convert the "human" variables from 10 thousands to thousands, just for consistency 
+ct_spdata_long %<>%
+  mutate(emphotel = emphotel * 10,
+         pop = pop * 10
+  )
+
+## linear interpolation to deal with missing values
+ct_spdata_long %<>%
+        mutate(across(c(tarl:inavexp), \(x) zoo::na.approx(x, rule = 2))) 
+
+## check if there are still NA left
+sum(is.na(ct_spdata_long))
+
+## set tell R it is a panel
+ct_spdata_long <- pdata.frame(ct_spdata_long, index = c("城市shapefile", "year"))
+## summarize the data
+summary(ct_spdata_long)
+```
+
+
+### Data description
+
+Our data sets contains the data for 283 prefectual-level cities in China from 2011-2019. The following variables are included. 
+
+* `城市shapefile` are the names of the cities in Chinese. Note that it is useful to have chinese names here, as the names in English `City` is incapable of distinguishing the city Fuzhou from Jiangxi province and the city Fuzhou from Fujian province. So make sure to use the chinese version whenever you want to do some macthing/identification/merging work.
+
+* The `Lat` and `Long` variables give the latitude and longitude of these cities. `Geometry` is unique in the `sf` object, it stores the geographical information. 
+
+* `tarl`, `dmarl` and `inarl` are total tourist arrivals, domestic tourist arrivals and international tourist arrivals in thousands, resp.  `trev`, `dmrevl` and `inrev` are total tourism revenue, domestic revenue and international tourism revenue in millions of RMBs (and dollars for the international revenue), resp. 
+
+* __costs__ `tavexp`, `dmavexp` and `inavexp` are the average tourist expenditure in the total, domestic and international level, resp (They are measured in RMB). 
+
+* __price level__ `CPIpy` and `CPI11` are CPI indexes with the base of the preceeding year and 2011, respectively. `hprice` is the price of residential houses (in RMB/m2) in that city. 
+
+* __tourism attractiveness__ `emphotel` is the number of employees in the hotel and catering industry (in thousands).  `spot5A` is then number of "5A" tourism spots. `scenum` is the number of scenic spots.  `grnld` is the green coverage measured in 10,000 square meters.
+
+* __economic development__ `GDPpc` is the GDP per capita in RMB. `slry` is the local salary in RMB. `terti` is the percent of the tertiary industry in the total economy.
+
+* __transportation convenience__ `road` measures the area of roads in million square meters. `bus`, `taxi`, `hotel` are the numbers of oeprating buses, taxis and hotels with star ratings in the city. `subnum` is the number of subway stations in the city.
+
+* __general infrastructure and openness__ `invest` is the total investment in fixed assets in 10 thousands RMB, `forncap` is the actual use of foreign capital in 10 thousands of dollars. 
+
+* __others__ `pop` is the population in the city in thousands. `area` measures the administrative area of the city in square kilometers. 
+
+We first construct a weighting matrix using 8 nearest neighbors. The optimal number of neighbors will be tested later.
+
+### Weighting matrix
+
+```{r, results="hide"}
+## deprecated. 8nn may be too large.
+## Identify coordinates of the centroid of the multipolygon
+## coords <- st_centroid(st_geometry(ct_spdata_wide))
+
+## Create our 8 NN matrix
+## Note that the latitude and longitude are handled using great circle distances
+## R2 distances will be inaccurate
+## knn8W <- knearneigh(coords, k = 8)
+
+## Convert our knn object to neighborhood list
+## list8nn <- knn2nb(knn8W)
+## Convert to a matrix object
+## matrix8nn <- spdep::nb2mat(list8nn)
+## Convert our neighborhood list to an listw object
+## listw8nn <- spdep::nb2listw(list8nn) 
+## Plot the neighborhood relationships
+## plot(list8nn, coords)
+```
+
+```{r, results="hide"}
+## Identify coordinates of the centroid of the multipolygon
+coords <- st_centroid(st_geometry(ct_spdata_wide))
+
+## Create our 3,4,5,6 NN matrix
+## Note that the latitude and longitude are handled using great circle distances
+## R2 distances will be inaccurate
+knn3W <- knearneigh(coords, k = 3)
+knn4W <- knearneigh(coords, k = 4)
+knn5W <- knearneigh(coords, k = 5)
+knn6W <- knearneigh(coords, k = 6)
+
+## Convert our knn objects to neighborhood list
+list3nn <- knn2nb(knn3W)
+list4nn <- knn2nb(knn4W)
+list5nn <- knn2nb(knn5W)
+list6nn <- knn2nb(knn6W)
+
+## Convert to a matrix object
+matrix3nn <- spdep::nb2mat(list3nn)
+matrix4nn <- spdep::nb2mat(list4nn)
+matrix5nn <- spdep::nb2mat(list5nn)
+matrix6nn <- spdep::nb2mat(list6nn)
+
+## Convert our neighborhood list to an listw object
+listw4nn <- spdep::nb2listw(list4nn) 
+## Plot the neighborhood relationships
+# plot(list4nn, coords)
+```
+
+```{r}
+## Neighbourhood contiguity by distance
+d100nb <- dnearneigh(coords, 0, 100)
+d150nb <- dnearneigh(coords, 0, 150)
+d200nb <- dnearneigh(coords, 0, 200)
+summary(d200nb)
+
+## convert them to matrix
+d100nb %>% spdep::nb2mat(zero.policy = TRUE) -> matrixd100nb
+d150nb %>% spdep::nb2mat(zero.policy = TRUE) -> matrixd150nb
+d200nb %>% spdep::nb2mat(zero.policy = TRUE) -> matrixd200nb
+```
+
+```{r}
+## Create another weighting matrix based on contiguity relations (queen).
+ct_spdata_wide %>% spdep::poly2nb("geometry") %>% 
+  spdep::nb2mat(zero.policy = TRUE) -> matrixcont
+
+ct_spdata_wide %>% spdep::poly2nb("geometry") %>%  spdep::nb2listw(zero.policy = TRUE) -> listwnb
+```
+
+Create spatial lagged variables.
+```{r}
+## Create spatial lag for some variables
+
+lagGDPpc <- slag(ct_spdata_long$GDPpc, listw = listw4nn) %>% as.numeric( )
+
+ct_spdata_long$lagGDPpc <- lagGDPpc
+
+lagslry <- slag(ct_spdata_long$slry, listw = listw4nn) %>% as.numeric( )
+
+ct_spdata_long$lagslry <- lagslry
+
+lagtarl <- slag(ct_spdata_long$tarl, listw = listw4nn) %>% as.numeric( )
+
+ct_spdata_long$lagtarl <- lagtarl
+
+laghotel <- slag(ct_spdata_long$hotel, listw = listw4nn) %>% as.numeric( )
+
+ct_spdata_long$laghotel <- laghotel
+
+lagspot5A <- slag(ct_spdata_long$spot5A, listw = listw4nn) %>% as.numeric( )
+
+ct_spdata_long$lagspot5A <- lagspot5A
+
+lagterti<- slag(ct_spdata_long$terti, listw = listw4nn) %>% as.numeric( )
+
+ct_spdata_long$lagterti <- lagterti
+```
+
+## Prepate data for MATLAB
+
+```{r}
+tlaged_logged_ct_spdata_long <- ct_spdata_long
+
+## Use the independent variables from the previous year
+for (i in 7:ncol(tlaged_logged_ct_spdata_long)) {
+  tlaged_logged_ct_spdata_long[[i]] <- lag(tlaged_logged_ct_spdata_long[[i]], 1)
+}
+summary(tlaged_logged_ct_spdata_long)
+## Drop all observations with missing values 
+tlaged_logged_ct_spdata_long <- na.omit(tlaged_logged_ct_spdata_long)
+
+## Transfer all variables to log scale
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+  mutate(across(c(tarl:inrev, hprice:road, invest:lagspot5A), \(x) log(x+1)))
+
+summary(tlaged_logged_ct_spdata_long)
+
+```
+  
+## Create indicators using different variables
+```{r}
+## Create indicators using total arrivals
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+   mutate(
+     indicator_tarl = case_when(
+      tarl >= lagtarl ~  1,
+      tarl < lagtarl ~ 0
+     )
+   )
+
+## Create indicators using GDP per capita
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+   mutate(
+     indicator_gdp = case_when(
+      GDPpc >= lagGDPpc ~  1,
+      GDPpc < lagGDPpc ~ 0
+     )
+   )
+
+## Create indicators using number of hotels
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+   mutate(
+     indicator_hotel = case_when(
+      hotel >= laghotel ~  1,
+      hotel < laghotel ~ 0
+     )
+   )
+
+## Create indicators using number of 5A spots
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+   mutate(
+     indicator_5A = case_when(
+      spot5A >= lagspot5A ~  1,
+      spot5A < lagspot5A ~ 0
+     )
+   )
+
+## Create indicators using third industry development level
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+   mutate(
+     indicator_terti = case_when(
+      terti >= lagterti ~  1,
+      terti < lagterti ~ 0
+     )
+   )
+
+summary(tlaged_logged_ct_spdata_long)
+```
+
+
+```{r}
+library(xlsx)
+
+ tlaged_logged_ct_spdata_long %>%
+   as.data.frame() %>%
+   select(!geometry) %>%
+   arrange(year, 城市shapefile)  %>%
+ xlsx::write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/regions_2regime/east/east_tlaged_logged_ct_spdata_long.xlsx")
+ 
+ ## output weight matrix (4nn)
+ matrix4nn %>% as.data.frame() %>% write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/regions_2regime/east/east4nnmatrix.xlsx")
+```
+ 
+
+# ## output data file 
+# library(xlsx)
+# tlaged_logged_ct_spdata_long %>%
+#   as.data.frame() %>%
+#   select(!geometry) %>%
+#   arrange(year, 城市shapefile)  %>%
+# write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/regions_2regime/east/tlaged_logged_ct_spdata_long.xlsx")
+# 
+# ## output weight matrix (4nn as an example)
+# matrix4nn %>% as.data.frame() %>% write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/regions_2regime/east/east4nnmatrix.xlsx")
+```
+
+
+## Model tests
+
+We will be using different combinations of explanatory variables for testing.
+
+We first pick some variables from each of the variables from its group we defined before. We use this as a base case.
+
+1. **combo0**:
+```{r}
+formula0 <- log(1+tarl) ~  log(1 + GDPpc) + log(1+invest) + log(1+hotel) + log(1+spot5A) + log(1+pop) + log(1+road)
+```
+
+2. **combo1**:
+
+We add `tavexp` for a measurement of cost. It is expected to be negative. But may suffer from endogeneity.
+
+```{r}
+formula1 <- log(1+tarl) ~ log(1 + tavexp) + log(1 + GDPpc) + log(1+invest) + log(1+hotel) + log(1+spot5A) + log(1+pop) + log(1+road)
+```
+
+3. **combo2**:
+
+We change some variables from the same group.
+```{r}
+formula2 <- log(1+tarl) ~ log(1 + tavexp) + log(1 + slry) + log(1+forncap) + log(1+emphotel) + log(1+scenum) + log(1+area) + log(1+bus)
+```
+
+4. **combo4**:
+We pick all the significant variables above. (excluding `log(1 + tavexp)`)
+```{r}
+pslry <- slag(log(1 + ct_spdata_long$slry), listw = listw4nn)
+formula4 <- log(1+tarl) ~ log(1 + GDPpc) + pslry + log(1+invest) + log(1+hotel) + log(1+spot5A)+ log(1+scenum) + log(1+pop) + log(1+bus)
+```
+
+5. **combo5**:
+We pick all the significant variables above. (including `log(1 + tavexp)`)
+```{r}
+
+formula5 <- log(1+tarl) ~ log(1 + tavexp) + log(1 + GDPpc) + log(1 + slag(pslry, listw = listw4nn)) + log(1+invest) + log(1+hotel) + log(1+spot5A) + log(1+scenum) + log(1+pop) + log(1+bus)
+```
+
+## Test for spatial dependence
+
+$H_{0}:$ No random effect, no spatial autocorrelation
+```{r}
+bsktest(formula0, data = ct_spdata_long, listw = listw4nn, index = c("城市shapefile", "year"), test = "LMH")
+```
+$H_{0}:$ spatial autocorrelation
+```{r}
+bsktest(formula0, data = ct_spdata_long, listw = listw4nn, index = c("城市shapefile", "year"), test = "CLMlambda")
+```
+$H_{0}:$ random effect
+```{r}
+bsktest(formula0, data = ct_spdata_long, listw = listw4nn, index = c("城市shapefile", "year"), test = "CLMmu")
+```
+
+## Test between fixed effects model and random effect model (Hausman test)
+
+```{r}
+## $H_{0}:$ The preferred model is Random Effect
+sphtest(x = formula0, data = ct_spdata_long, listw = listw4nn, index = c("城市shapefile", "year"), spatial.model = "lag", method = "ML")
+```
+
+1. These tests are panel versions of the locally robust LM test for spatial dependence of Anselin (1996).
+```{r}
+slmtest(formula = formula0, data = ct_spdata_long, listw = listw4nn, index = c("城市shapefile", "year"), model = "within", test = "rlme")
+```
+```{r}
+slmtest(formula = formula0, data = ct_spdata_long, listw = listw4nn, index = c("城市shapefile", "year"), model = "within", test = "rlml")
+```
+
+This points us to the spatial lag model.
+
+## Test for different combinations of explanatory variables
+
+
+## Test for the number of neighbors
+
+
+## Panel regressions
+
+### Maximum likelihood estimation, pooled, lag model
+
+```{r}
+preg0 <- spml(formula = formula0, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, model = "pool", lag = TRUE, spatial.error = "none")
+summary(preg0)
+```
+
+### Maximum likelihood estimation, FE individual, lag model
+
+```{r}
+##index = c("城市shapefile", "year")
+preg1_fe <- spml(formula = formula4, data = ct_spdata_long, listw = listw4nn, model = "within", effect = "individual", lag = TRUE, spatial.error = "none")
+
+preg1_re <- spml(formula = formula5, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, model = "random",  effect = "individual", lag = TRUE, spatial.error = "none")
+## try error model and be prepared for weird results
+summary(preg1_fe)
+summary(preg1_re)
+```
+
+### GM, pooled, lag model, FE individual
+```{r}
+# preg2_fe <- spgm(formula = formula5, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, lag = TRUE, spatial.error = FALSE,  model = "within",  endog = ~ log(1+tavexp), instruments = ~log(1+hprice) + log(1+emphotel) + log(1+taxi))
+# 
+#  preg2_fe <- spgm(formula = formula5, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, lag = TRUE, spatial.error = TRUE,  model = "within")
+# 
+#  preg2_re <- spgm(formula = formula4, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, lag = TRUE, spatial.error = FALSE,  model = "random")
+```
+
+### Hausman test
+```{r}
+sphtest(preg1_fe, preg1_re)
+## sphtest(preg2_fe, preg2_re)
+```
+## effects
+```{r}
+spatialreg::impacts(preg1_fe, listw = listw4nn, time = 9)
+```
+
+## Huge problem
+```{r}
+weird_sarar_fe <- spml(formula = formula5, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, model = "within", effect = "individual", lag = TRUE, spatial.error = "b")
+summary(weird_sarar_fe)
+```
+
+
+## Two regime panel models with fixed effects: an attemption
+
+
+## Summary
