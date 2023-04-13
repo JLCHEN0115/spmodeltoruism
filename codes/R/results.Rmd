@@ -12,7 +12,7 @@ output: html_document
 Load the packages we will be using in this document.
 ```{r pkgs}
 ## Load and install the R packages we might will be using.
-pacman::p_load(sf, tidyverse, magrittr, data.table, hrbrthemes, zoo, GWmodel, spatialreg, spdep, plm, splm, pspatreg, zoo, chatgpt, xlsx)
+pacman::p_load(sf, tidyverse, magrittr, data.table, hrbrthemes, zoo, GWmodel, spatialreg, spdep, plm, splm, pspatreg, zoo, chatgpt, xlsx, olsrr)
 ```
 
 Some data wrangling work.
@@ -414,7 +414,7 @@ preg1_fe_ind <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, li
 preg1_fe_time <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, model = "within", effect = "time", lag = TRUE, spatial.error = "none")
 
 ## FE twoway
-preg1_fe <- spml(formula = formula0, data = hy_tlaged_logged_ct_spdata_long, listw = listw3nn, model = "within", effect = "twoway", lag = TRUE, spatial.error = "none")
+preg1_fe <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, model = "within", effect = "twoway", lag = TRUE, spatial.error = "none")
 
 ## insignificant spatial effects. This is due to the estimation of individual fixed effects - we only use 8 years for each unit to estimate.
 
@@ -513,7 +513,7 @@ qq_residuals <- ggplot() +
   geom_abline(color = "red") +
   geom_qq(aes(sample = results$standized_resid)) +
   geom_vline(xintercept = c(-2, 2), linetype="dotted", 
-                color = "blue", size=1) +
+                color = "blue", linewidth = 1) +
   coord_fixed()
 qq_residuals
 

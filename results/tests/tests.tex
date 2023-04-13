@@ -64,7 +64,7 @@ The null hypothesis is
 		0
 \end{pmatrix}.	\]
 		
-The test statistic takes the value $6069.595$, which is much larger than the critical value for a $99.9\%$ confidence interval ($361.1201$). We accept the alternative hypothesis,  with a p-value less than $0.001$.
+The test statistic takes the value $6069.595$, which is much larger than the critical value for a $99.9\%$ confidence interval ($361.1201$). We reject the null hypothesis,  with a p-value less than $0.001$.
 
 $\bullet$ \textbf{$H_{0}:$ Time fixed effects are not jointly significant.} 
 		
@@ -81,7 +81,7 @@ The null hypothesis is
 		0
 \end{pmatrix}.	\]
 		
-The test statistic takes the value $74.08778$, which is much larger than the critical value for a 99.9\% confidence interval ($24.32189$). We accept the alternative hypothesis, with a p-value less than $0.001$.
+The test statistic takes the value $74.08778$, which is much larger than the critical value for a 99.9\% confidence interval ($24.32189$). We reject the null hypothesis, with a p-value less than $0.001$.
 		
 These results justify the usage of individual and time fixed effects. 
 		
@@ -106,7 +106,7 @@ This is the Q-Q plot of the standardized residuals.
 
 If the residual is actually distributed normally, the dots should fit the red line well. It is argued that with a large sample, it is more important to focus on the standardized residuals within the range $[-2, 2]$. This is because these tests are tend to over-reject the null when  sample size is large.  In the tails, due to lower density, deviations (from the normal distribution) are expected but not of concern. As you can see, most of our residuals within $[-2, 2]$ fits the line quite well. Only a limited number of them outside that range deviates from the red line.
 
-We can also test this formally. But this kind of test should be taken with a grain of salt.\footnote{See \href{https://stats.stackexchange.com/questions/2492/is-normality-testing-essentially-useless}{here} for a discussion on this issue.} We use Kolmogorov–Smirnov test for the test of normality. If we focus on this range (with $2141$ out of $2264$ observations), we have the following test results.
+We can also test this formally. But this kind of test should be taken with a grain of salt.\footnote{See \href{https://stats.stackexchange.com/questions/2492/is-normality-testing-essentially-useless}{here} for a discussion on this issue.} We use Kolmogorov–Smirnov test for the test of normality. If we focus on this range of $[-2, 2]$ (with $2141$ out of $2264$ observations), we have the following test results.
 
 $\bullet$ \textbf{$H_{0}:$ The econometric residuals are drawn from a normal distribution.} 
 
