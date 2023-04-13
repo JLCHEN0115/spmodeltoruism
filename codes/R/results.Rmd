@@ -12,7 +12,7 @@ output: html_document
 Load the packages we will be using in this document.
 ```{r pkgs}
 ## Load and install the R packages we might will be using.
-pacman::p_load(sf, tidyverse, magrittr, data.table, hrbrthemes, zoo, GWmodel, spatialreg, spdep, plm, splm, pspatreg, zoo, chatgpt)
+pacman::p_load(sf, tidyverse, magrittr, data.table, hrbrthemes, zoo, GWmodel, spatialreg, spdep, plm, splm, pspatreg, zoo, chatgpt, xlsx)
 ```
 
 Some data wrangling work.
@@ -243,7 +243,6 @@ tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
   mutate(across(c(tarl:inrev, hprice:road, invest:lagpop, laginvest:lagtavexp), \(x) log(x+1)))
 
 summary(tlaged_logged_ct_spdata_long)
-
 ```
   
 ## Create indicators using different variables
@@ -367,7 +366,6 @@ summary(tlaged_logged_ct_spdata_long)
 
 
 ```{r}
-# library(xlsx)
 # 
 # tlaged_logged_ct_spdata_long %>%
 #    as.data.frame() %>%
@@ -396,7 +394,66 @@ remove population variable as they may not be significant.
 formula1 <- tarl ~ GDPpc + slry + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagtavexp
 ```
 
-## Test for spatial dependence
+## Panel regressions
+
+### Maximum likelihood estimation, pooled, lag model
+
+```{r}
+preg0 <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, index = c("城市shapefile", "year"), listw = listw3nn, model = "pooling", lag = TRUE, spatial.error = "none")
+summary(preg0)
+```
+
+### Maximum likelihood estimation, one regime
+
+```{r}
+##index = c("城市shapefile", "year")
+## FE individual
+preg1_fe_ind <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, model = "within", effect = "individual", lag = TRUE, spatial.error = "none")
+
+## FE time
+preg1_fe_time <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, model = "within", effect = "time", lag = TRUE, spatial.error = "none")
+
+## FE twoway
+preg1_fe <- spml(formula = formula0, data = hy_tlaged_logged_ct_spdata_long, listw = listw3nn, model = "within", effect = "twoway", lag = TRUE, spatial.error = "none")
+
+## insignificant spatial effects. This is due to the estimation of individual fixed effects - we only use 8 years for each unit to estimate.
+
+## see what if we estimate the random effect model
+preg1_re <- spml(formula = formula0, data = hy_tlaged_logged_ct_spdata_long, index = c("城市shapefile", "year"), listw = listw3nn, model = "random", lag = TRUE, spatial.error = "none")
+
+summary(preg1_fe_ind)
+summary(preg1_fe_time)
+summary(preg1_fe)
+summary(preg1_re)
+```
+
+## Hypotheses tests
+
+### LR test for fixed effects
+```{r}
+## Calculate likelihood ratio test statistics for individaul fe
+lr_stat_ind_fe <- 2 * (preg1_fe_ind$logLik - preg0$logLik)
+lr_stat_ind_fe
+## Find chi-squared critical value for 282 degrees of freedom
+qchisq(0.99, 282)
+## Test if likelihood ratio test statistic is greater than critical value
+lr_stat_ind_fe > qchisq(0.99, 282)
+## Calculate p-value of test
+1 - pchisq(lr_stat_ind_fe, 282)
+
+## Calculate likelihood ratio test statistics for time fe
+lr_stat_time_fe <- 2 * (preg1_fe_time$logLik - preg0$logLik)
+lr_stat_time_fe
+## Find chi-squared critical value for 282 degrees of freedom
+qchisq(0.999, 7)
+## Test if likelihood ratio test statistic is greater than critical value
+lr_stat_time_fe > qchisq(0.999, 7)
+## Calculate p-value of test
+1 - pchisq(lr_stat_ind_fe, 282)
+```
+
+
+### Test for spatial dependence
 
 $H_{0}:$ No random effect, no spatial autocorrelation
 ```{r}
@@ -411,7 +468,7 @@ $H_{0}:$ random effect
 bsktest(formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, index = c("城市shapefile", "year"), test = "CLMmu")
 ```
 
-## Test between fixed effects model and random effect model (Hausman test)
+### Test between fixed effects model and random effect model (Hausman test)
 
 ```{r}
 ## $H_{0}:$ The preferred model is Random Effect
@@ -428,36 +485,43 @@ slmtest(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3n
 
 This points us to the spatial lag model.
 
-## Test for different combinations of explanatory variables
-
-
-## Test for the number of neighbors
-
-
-## Panel regressions
-
-### Maximum likelihood estimation, pooled, lag model
+### Test for normality, serial dependence, and homoskedasticity
 
 ```{r}
-preg0 <- spml(formula = formula0, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, model = "pool", lag = TRUE, spatial.error = "none")
-summary(preg0)
+# rearrange data so that they are stacked as [city1,...,city283 ] in year 1, then  [city1,...,city283 ] in year 2 ...
+stacked_tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+   arrange(year, 城市shapefile)
+## import and wrange regression results data
+results <- read.xlsx("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/results.xlsx", 1) %>% data.table::transpose(make.names = "OriginalVariableNames") %>% mutate(城市shapefile = stacked_tlaged_logged_ct_spdata_long$城市shapefile) %>% select(c("城市shapefile", "y", "yhat", "resid")) 
+
+## take a look of the results
+str(results)
+## our cols are coerased into characters, we need to bring them back to numeric values
+results[c("y", "yhat", "resid")] <- map(results[c("y", "yhat", "resid")], as.numeric)
+## check we did it correct
+sum(results$y == stacked_tlaged_logged_ct_spdata_long$tarl) # should be 2264
+str(results)
+
+## To test for normality, we need to first standardize the redisuals
+results <- results %>% mutate(standized_resid = resid / sd(resid))
+## kdensity plot of the redisual
+resid_plot <- ggplot(data = results, aes(x = standized_resid)) + 
+  geom_density() 
+resid_plot
+## Q-Q plot
+qq_residuals <- ggplot() +
+  geom_abline(color = "red") +
+  geom_qq(aes(sample = results$standized_resid)) +
+  geom_vline(xintercept = c(-2, 2), linetype="dotted", 
+                color = "blue", size=1) +
+  coord_fixed()
+qq_residuals
+
+normality_test <- results %>% filter(standized_resid >= -2 & standized_resid <= 2) %>% select(standized_resid)  %>% unlist() %>% ols_test_normality()
+
+normality_test 
 ```
 
-### Maximum likelihood estimation, one regime
-
-```{r}
-##index = c("城市shapefile", "year")
-## FE twoway
-preg1_fe <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, model = "within", effect = "twoway", lag = TRUE, spatial.error = "none")
-
-## insignificant spatial effects. This is due to the estimation of individual fixed effects - we only use 8 years for each unit to estimate.
-
-## see what if we estimate the random effect model
-preg1_re <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, index = c("城市shapefile", "year"), listw = listw3nn, model = "random", lag = TRUE, spatial.error = "none")
-
-summary(preg1_fe)
-summary(preg1_re)
-```
 
 ### Hausman test
 ```{r}
