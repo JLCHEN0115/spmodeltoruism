@@ -149,7 +149,7 @@ matrix5nn <- spdep::nb2mat(list5nn)
 matrix6nn <- spdep::nb2mat(list6nn)
 
 ## Convert our neighborhood list to an listw object
-listw4nn <- spdep::nb2listw(list4nn) 
+listw3nn <- spdep::nb2listw(list3nn) 
 ## Plot the neighborhood relationships
 # plot(list4nn, coords)
 ```
@@ -179,32 +179,53 @@ Create spatial lagged variables.
 ```{r}
 ## Create spatial lag for some variables
 
-lagGDPpc <- slag(ct_spdata_long$GDPpc, listw = listw4nn) %>% as.numeric( )
+lagGDPpc <- slag(ct_spdata_long$GDPpc, listw = listw3nn) %>% as.numeric( )
 
 ct_spdata_long$lagGDPpc <- lagGDPpc
 
-lagslry <- slag(ct_spdata_long$slry, listw = listw4nn) %>% as.numeric( )
+lagslry <- slag(ct_spdata_long$slry, listw = listw3nn) %>% as.numeric( )
 
 ct_spdata_long$lagslry <- lagslry
 
-lagtarl <- slag(ct_spdata_long$tarl, listw = listw4nn) %>% as.numeric( )
+lagtarl <- slag(ct_spdata_long$tarl, listw = listw3nn) %>% as.numeric( )
 
 ct_spdata_long$lagtarl <- lagtarl
 
-laghotel <- slag(ct_spdata_long$hotel, listw = listw4nn) %>% as.numeric( )
+lagpop <- slag(ct_spdata_long$pop, listw = listw3nn) %>% as.numeric( )
+
+ct_spdata_long$lagpop <- lagpop
+
+lagterti <- slag(ct_spdata_long$terti, listw = listw3nn) %>% as.numeric( )
+
+ct_spdata_long$lagterti <- lagterti
+
+laginvest <- slag(ct_spdata_long$invest, listw = listw3nn) %>% as.numeric( )
+
+ct_spdata_long$laginvest <- laginvest
+
+lagtaxi <- slag(ct_spdata_long$taxi, listw = listw3nn) %>% as.numeric( )
+
+ct_spdata_long$lagtaxi <- lagtaxi
+
+laghotel <- slag(ct_spdata_long$hotel, listw = listw3nn) %>% as.numeric( )
 
 ct_spdata_long$laghotel <- laghotel
 
-lagspot5A <- slag(ct_spdata_long$spot5A, listw = listw4nn) %>% as.numeric( )
+lagspot5A <- slag(ct_spdata_long$spot5A, listw = listw3nn) %>% as.numeric( )
 
 ct_spdata_long$lagspot5A <- lagspot5A
 
-lagterti<- slag(ct_spdata_long$terti, listw = listw4nn) %>% as.numeric( )
+laggrnld <- slag(ct_spdata_long$grnld, listw = listw3nn) %>% as.numeric( )
 
-ct_spdata_long$lagterti <- lagterti
+ct_spdata_long$laggrnld <- laggrnld
+
+lagtavexp <- slag(ct_spdata_long$tavexp, listw = listw3nn) %>% as.numeric( )
+
+ct_spdata_long$lagtavexp <- lagtavexp
+
 ```
 
-## Prepate data for MATLAB
+## Use time lag, log transform.
 
 ```{r}
 tlaged_logged_ct_spdata_long <- ct_spdata_long
@@ -219,7 +240,7 @@ tlaged_logged_ct_spdata_long <- na.omit(tlaged_logged_ct_spdata_long)
 
 ## Transfer all variables to log scale
 tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
-  mutate(across(c(tarl:inrev, hprice:road, invest:lagspot5A), \(x) log(x+1)))
+  mutate(across(c(tarl:inrev, hprice:road, invest:lagpop, laginvest:lagtavexp), \(x) log(x+1)))
 
 summary(tlaged_logged_ct_spdata_long)
 
@@ -346,100 +367,63 @@ summary(tlaged_logged_ct_spdata_long)
 
 
 ```{r}
-library(xlsx)
-
-tlaged_logged_ct_spdata_long %>%
-   as.data.frame() %>%
-   select(!geometry) %>%
-   arrange(year, 城市shapefile)  %>%
- xlsx::write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/tlaged_logged_ct_spdata_long.xlsx")
- 
- ## output weight matrix (4nn)
- matrix4nn %>% as.data.frame() %>% write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/4nnmatrix.xlsx")
-```
- 
-
-# ## output data file 
 # library(xlsx)
-# tlaged_logged_ct_spdata_long %>%
-#   as.data.frame() %>%
-#   select(!geometry) %>%
-#   arrange(year, 城市shapefile)  %>%
-# write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/tlaged_logged_ct_spdata_long.xlsx")
 # 
-# ## output weight matrix (4nn as an example)
-# matrix4nn %>% as.data.frame() %>% write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/4nnmatrix.xlsx")
+# tlaged_logged_ct_spdata_long %>%
+#    as.data.frame() %>%
+#    select(!geometry) %>%
+#    arrange(year, 城市shapefile)  %>%
+#  xlsx::write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/tlaged_logged_ct_spdata_long.xlsx")
+#  
+#  ## output weight matrix (4nn)
+#  matrix4nn %>% as.data.frame() %>% write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/4nnmatrix.xlsx")
 ```
-
 
 ## Model tests
 
-We will be using different combinations of explanatory variables for testing.
-
-We first pick some variables from each of the variables from its group we defined before. We use this as a base case.
+We will be mainly operating on `tlaged_logged_ct_spdata_long`.
 
 1. **combo0**:
 ```{r}
-formula0 <- log(1+tarl) ~  log(1 + GDPpc) + log(1+invest) + log(1+hotel) + log(1+spot5A) + log(1+pop) + log(1+road)
+formula0 <- tarl ~ GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagpop + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagtavexp
 ```
 
 2. **combo1**:
 
-We add `tavexp` for a measurement of cost. It is expected to be negative. But may suffer from endogeneity.
+remove population variable as they may not be significant.
 
 ```{r}
-formula1 <- log(1+tarl) ~ log(1 + tavexp) + log(1 + GDPpc) + log(1+invest) + log(1+hotel) + log(1+spot5A) + log(1+pop) + log(1+road)
-```
-
-3. **combo2**:
-
-We change some variables from the same group.
-```{r}
-formula2 <- log(1+tarl) ~ log(1 + tavexp) + log(1 + slry) + log(1+forncap) + log(1+emphotel) + log(1+scenum) + log(1+area) + log(1+bus)
-```
-
-4. **combo4**:
-We pick all the significant variables above. (excluding `log(1 + tavexp)`)
-```{r}
-pslry <- slag(log(1 + ct_spdata_long$slry), listw = listw4nn)
-formula4 <- log(1+tarl) ~ log(1 + GDPpc) + pslry + log(1+invest) + log(1+hotel) + log(1+spot5A)+ log(1+scenum) + log(1+pop) + log(1+bus)
-```
-
-5. **combo5**:
-We pick all the significant variables above. (including `log(1 + tavexp)`)
-```{r}
-
-formula5 <- log(1+tarl) ~ log(1 + tavexp) + log(1 + GDPpc) + log(1 + slag(pslry, listw = listw4nn)) + log(1+invest) + log(1+hotel) + log(1+spot5A) + log(1+scenum) + log(1+pop) + log(1+bus)
+formula1 <- tarl ~ GDPpc + slry + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagtavexp
 ```
 
 ## Test for spatial dependence
 
 $H_{0}:$ No random effect, no spatial autocorrelation
 ```{r}
-bsktest(formula0, data = ct_spdata_long, listw = listw4nn, index = c("城市shapefile", "year"), test = "LMH")
+bsktest(formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, index = c("城市shapefile", "year"), test = "LMH")
 ```
 $H_{0}:$ spatial autocorrelation
 ```{r}
-bsktest(formula0, data = ct_spdata_long, listw = listw4nn, index = c("城市shapefile", "year"), test = "CLMlambda")
+bsktest(formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, index = c("城市shapefile", "year"), test = "CLMlambda")
 ```
 $H_{0}:$ random effect
 ```{r}
-bsktest(formula0, data = ct_spdata_long, listw = listw4nn, index = c("城市shapefile", "year"), test = "CLMmu")
+bsktest(formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, index = c("城市shapefile", "year"), test = "CLMmu")
 ```
 
 ## Test between fixed effects model and random effect model (Hausman test)
 
 ```{r}
 ## $H_{0}:$ The preferred model is Random Effect
-sphtest(x = formula0, data = ct_spdata_long, listw = listw4nn, index = c("城市shapefile", "year"), spatial.model = "lag", method = "ML")
+sphtest(x = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, index = c("城市shapefile", "year"), spatial.model = "lag", method = "ML")
 ```
 
 1. These tests are panel versions of the locally robust LM test for spatial dependence of Anselin (1996).
 ```{r}
-slmtest(formula = formula0, data = ct_spdata_long, listw = listw4nn, index = c("城市shapefile", "year"), model = "within", test = "rlme")
+slmtest(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, index = c("城市shapefile", "year"), model = "within", test = "rlme")
 ```
 ```{r}
-slmtest(formula = formula0, data = ct_spdata_long, listw = listw4nn, index = c("城市shapefile", "year"), model = "within", test = "rlml")
+slmtest(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, index = c("城市shapefile", "year"), model = "within", test = "rlml")
 ```
 
 This points us to the spatial lag model.
@@ -459,25 +443,20 @@ preg0 <- spml(formula = formula0, data = ct_spdata_long, index = c("城市shapef
 summary(preg0)
 ```
 
-### Maximum likelihood estimation, FE individual, lag model
+### Maximum likelihood estimation, one regime
 
 ```{r}
 ##index = c("城市shapefile", "year")
-preg1_fe <- spml(formula = formula4, data = ct_spdata_long, listw = listw4nn, model = "within", effect = "individual", lag = TRUE, spatial.error = "none")
+## FE twoway
+preg1_fe <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, model = "within", effect = "twoway", lag = TRUE, spatial.error = "none")
 
-preg1_re <- spml(formula = formula5, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, model = "random",  effect = "individual", lag = TRUE, spatial.error = "none")
-## try error model and be prepared for weird results
+## insignificant spatial effects. This is due to the estimation of individual fixed effects - we only use 8 years for each unit to estimate.
+
+## see what if we estimate the random effect model
+preg1_re <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, index = c("城市shapefile", "year"), listw = listw3nn, model = "random", lag = TRUE, spatial.error = "none")
+
 summary(preg1_fe)
 summary(preg1_re)
-```
-
-### GM, pooled, lag model, FE individual
-```{r}
-# preg2_fe <- spgm(formula = formula5, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, lag = TRUE, spatial.error = FALSE,  model = "within",  endog = ~ log(1+tavexp), instruments = ~log(1+hprice) + log(1+emphotel) + log(1+taxi))
-# 
-#  preg2_fe <- spgm(formula = formula5, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, lag = TRUE, spatial.error = TRUE,  model = "within")
-# 
-#  preg2_re <- spgm(formula = formula4, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, lag = TRUE, spatial.error = FALSE,  model = "random")
 ```
 
 ### Hausman test
@@ -487,17 +466,7 @@ sphtest(preg1_fe, preg1_re)
 ```
 ## effects
 ```{r}
-spatialreg::impacts(preg1_fe, listw = listw4nn, time = 9)
+spatialreg::impacts(preg1_fe, listw = listw4nn, time = 8)
 ```
-
-## Huge problem
-```{r}
-weird_sarar_fe <- spml(formula = formula5, data = ct_spdata_long, index = c("城市shapefile", "year"), listw = listw4nn, model = "within", effect = "individual", lag = TRUE, spatial.error = "b")
-summary(weird_sarar_fe)
-```
-
-
-## Two regime panel models with fixed effects: an attemption
-
 
 ## Summary
