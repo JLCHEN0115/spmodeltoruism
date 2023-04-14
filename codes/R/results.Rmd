@@ -533,9 +533,9 @@ normality_test
 results <- results %>% mutate(tlaged_resid = lag(results[["resid"]], 1))
 results <- results %>% mutate(tlagedlaged_resid = lag(results[["resid"]], 2))
 results <- results %>% mutate(tlagedlagedlaged_resid = lag(results[["resid"]], 3))
-resid_plot1 <- results %>% ggplot(aes(x=resid, y=tlaged_resid)) + geom_point() 
-resid_plot2 <- results %>% ggplot(aes(x=resid, y=tlagedlaged_resid)) + geom_point()     
-resid_plot3 <- results %>% ggplot(aes(x=resid, y=tlagedlagedlaged_resid)) + geom_point() 
+resid_plot1 <-results %>% as.data.frame() %>% ggplot(aes(x=resid, y=tlaged_resid)) + geom_point(size = 1) 
+resid_plot2 <- results %>% as.data.frame() %>% ggplot(aes(x=resid, y=tlagedlaged_resid)) + geom_point(size = 1) 
+resid_plot3 <-  results %>% as.data.frame() %>% ggplot(aes(x=resid, y=tlagedlagedlaged_resid)) + geom_point(size = 1) 
 p4 <- gridExtra::grid.arrange(
   resid_plot1,
   resid_plot2,
