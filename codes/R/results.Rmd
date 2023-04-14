@@ -396,6 +396,12 @@ formula1 <- tarl ~ GDPpc + slry + terti + invest + taxi + hotel + spot5A + grnld
 
 ## Panel regressions
 
+### nonspatial pooled model
+```{r}
+preg_nonspatial <- plm(formula = tarl ~ GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp, data = tlaged_logged_ct_spdata_long, index = c("城市shapefile", "year"), model = "pooling")
+summary(preg_nonspatial)
+```
+
 ### Maximum likelihood estimation, pooled, lag model
 
 ```{r}
@@ -419,7 +425,7 @@ preg1_fe <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw 
 ## insignificant spatial effects. This is due to the estimation of individual fixed effects - we only use 8 years for each unit to estimate.
 
 ## see what if we estimate the random effect model
-preg1_re <- spml(formula = formula0, data = hy_tlaged_logged_ct_spdata_long, index = c("城市shapefile", "year"), listw = listw3nn, model = "random", lag = TRUE, spatial.error = "none")
+preg1_re <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, index = c("城市shapefile", "year"), listw = listw3nn, model = "random", lag = TRUE, spatial.error = "none")
 
 summary(preg1_fe_ind)
 summary(preg1_fe_time)
@@ -492,14 +498,14 @@ This points us to the spatial lag model.
 stacked_tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
    arrange(year, 城市shapefile)
 ## import and wrange regression results data
-results <- read.xlsx("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/results.xlsx", 1) %>% data.table::transpose(make.names = "OriginalVariableNames") %>% mutate(城市shapefile = stacked_tlaged_logged_ct_spdata_long$城市shapefile) %>% select(c("城市shapefile", "y", "yhat", "resid")) 
+results <- read.xlsx("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/results.xlsx", 1) %>% data.table::transpose(make.names = "OriginalVariableNames") %>% mutate(城市shapefile = stacked_tlaged_logged_ct_spdata_long$城市shapefile, year = stacked_tlaged_logged_ct_spdata_long$year) %>% select(c("城市shapefile", "year", "y", "yhat", "resid")) 
 
 ## take a look of the results
 str(results)
 ## our cols are coerased into characters, we need to bring them back to numeric values
 results[c("y", "yhat", "resid")] <- map(results[c("y", "yhat", "resid")], as.numeric)
 ## check we did it correct
-sum(results$y == stacked_tlaged_logged_ct_spdata_long$tarl) # should be 2264
+sum(results$y - stacked_tlaged_logged_ct_spdata_long$tarl) # should be basically 0, up to some rounding error
 str(results)
 
 ## To test for normality, we need to first standardize the redisuals
@@ -519,8 +525,57 @@ qq_residuals
 
 normality_test <- results %>% filter(standized_resid >= -2 & standized_resid <= 2) %>% select(standized_resid)  %>% unlist() %>% ols_test_normality()
 
-normality_test 
+normality_test
 ```
+### Serial corrrelation in the residual
+
+```{r}
+results <- results %>% mutate(tlaged_resid = lag(results[["resid"]], 1))
+results <- results %>% mutate(tlagedlaged_resid = lag(results[["resid"]], 2))
+results <- results %>% mutate(tlagedlagedlaged_resid = lag(results[["resid"]], 3))
+resid_plot1 <- results %>% ggplot(aes(x=resid, y=tlaged_resid)) + geom_point() 
+resid_plot2 <- results %>% ggplot(aes(x=resid, y=tlagedlaged_resid)) + geom_point()     
+resid_plot3 <- results %>% ggplot(aes(x=resid, y=tlagedlagedlaged_resid)) + geom_point() 
+p4 <- gridExtra::grid.arrange(
+  resid_plot1,
+  resid_plot2,
+  resid_plot3,
+  nrow = 1
+)
+
+results <- pdata.frame(results, index = c("城市shapefile", "year"))
+## calculate serial correlation for each observation
+ser_corr <- vector("list", length(283))
+cities_names <- ct_spdata_wide[["城市shapefile"]]
+for (i in 1:283){
+  ser_corr[[i]] <- (results %>% filter(城市shapefile == cities_names[[i]]) %>% select(resid) %>% unlist() %>% EnvStats::serialCorrelationTest(test="AR1.yw") )$p.value
+}
+
+mean(ser_corr < 0.1)
+```
+
+### Breusch-Pagan test for homoskedasticity
+```{r}
+BPtest <- plm(resid ~ yhat, data = results, model = "pooling")
+summary(BPtest)
+
+## visual test 
+results <- results %>% mutate(srqt_standized_resid = sqrt(standized_resid))
+
+hmsk_plot <- results %>% as.data.frame() %>% ggplot(aes(yhat, srqt_standized_resid)) +
+    geom_point() +
+    geom_smooth()
+
+## calculate the Breusch-Pagan test statistics
+BP_stat = 2264 * r.squared(BPtest)
+## Find chi-squared critical value for 1 degree of freedom
+qchisq(0.99, 1)
+## Test if likelihood ratio test statistic is greater than critical value
+BP_stat > qchisq(0.99, 1)
+## Calculate p-value of test
+1 - pchisq(BP_stat, 1)
+```
+
 
 
 ### Hausman test

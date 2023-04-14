@@ -21,6 +21,7 @@
 \usepackage{color} % color some text
 \usepackage{framed} % to add a frame 
 \usepackage{tikz}
+\usepackage{tabularx} 
 \newcommand*\circled[1]{\tikz[baseline=(char.base)]{
 		\node[shape=circle,draw,inner sep=1pt] (char) {#1};}} % circled numbers
 \usepackage{float}%do not auto repositioning
@@ -33,13 +34,13 @@
 \addbibresource{specms.bib} %Import the bibliography file
 	
 \begin{document}
-\title{Hypothesis tests}
+\title{the bouquet of tests}
 \date{\today}
 \maketitle
 \tableofcontents
 \newpage
 		
-\section{Specification tests}
+\section {Specification tests}
 \subsection{Likelihood ratio tests for fixed effects. }\hfill\par
 		
 \textit{The likelihood ratio test} compares the log-likelihood of the unrestricted model with that of the restricted mode. The rationale is that if the null hypotheses are true, then these values should be close. The likelihood ratio test statistics is 
@@ -87,7 +88,7 @@ These results justify the usage of individual and time fixed effects.
 		
 \subsection{Lagrange multiplier tests for spatial effects.}\footnote{Tests for spatial dependence in panel models by \parencite{anselinSpatialPanelEconometrics2008}.}\hfill\par
 		
-\subsection{Normality, serial independence, and homoskedasticity of the regression residuals}
+\subsection{Normality of the regression residuals}\hfill\par
 
 Our maximum likelihood estimation depends on the assumption that $\epsilon_{it}$ is i.i.d. normally distributed. We can get some clues about this assumption by looking at the residuals. Here I am using the residuals of the two-regime regression and 3nn weighting matrix. 
 
@@ -112,9 +113,45 @@ $\bullet$ \textbf{$H_{0}:$ The econometric residuals are drawn from a normal dis
 
 The Kolmogorov–Smirnov test statistic is  $0.0258$ with a p-value of $0.1158$. There is not enough evidence to reject the assumption of normally distributed residuals. 
 
+\subsection{Sequential correlation of the regression residuals}\hfill\par
 
+The tests for serial correlation in the residuals for our spatial panel model with two-way fixed effects and two endogenous spatial lags is not well developed. The plots give some intuition.
 
-\section{Other tests}
+\begin{figure}[hbt]
+	{\centering \includegraphics[scale=0.78]{/Users/jialiangchen/Documents/spmodeltoruism/results/corr_resid.pdf}}
+	\caption{The serial correlation of residuals}\label{F:corr_resid}
+\end{figure}
+
+Following the practice of \parencite{elhorstEvidencePoliticalYardstick2009a}, I tested the evidence of serial correlation in the residuals using time series data for each observations. The test is based on Yule-Walker Estimate. For each observation, we test the null of purely random time series. The result indicates that for $23\%$ percent of the cities, we must reject the null. 
+
+Note that this test relies on the normality of error term. But as we tested the normality before, we should be fine. 
+
+\subsection{Homoskedasticity of the regression residuals}\hfill\par
+A violation of homoscedasticity is indicated by a non-flat fitted line of a scale-location plot.  We fail to find evidence of heteroskedasticity.
+
+\begin{figure}[hbt]
+	{\centering \includegraphics[scale=0.78]{/Users/jialiangchen/Documents/spmodeltoruism/results/hmsk.pdf}}
+	\caption{The scale-location plot for standardized residuals}\label{F:hmsk}
+\end{figure}
+
+I use the Breusch-Pagan test to assess homoscedasticity formally. The Breusch-Pagan test regresses the residuals on the fitted values or predictors and checks whether they can explain any of the residual variance. A small p-value, then, indicates that residual variance is non-constant (heteroscedastic). 
+
+The Breusch-Pagan test statistics in our model is about $0.10$ with a p-value of $0.74$. We have no evidence to reject the null of homoskedasticity.
+
+\subsection{Multicollinearity}\hfill\par
+Below are the the variance inflation factors (VIF) for the explanatory variables. It contains information about the extent of similarity between explanatory variables, as well as how much standard error is increased due to multicollinearity.  A value below $5$ indicates that we are good.
+\begin{table}[H]
+	\centering % Center the table
+	\begin{tabularx}{\textwidth}{|X|X|X|X|X|X|X|X|X|X|}
+		\hline
+		GDPpc   &  slry    &  pop &   terti &  invest  &   taxi   &  hotel &  spot5A   &  grnld &  tavexp \\
+	\hline
+	4.073864& 2.333043  & 4.747088 & 2.167909 & 5.267853 & 2.394111 & 1.976621 & 1.510278 & 3.763018 & 1.569254 \\
+		\hline
+	\end{tabularx}
+\end{table}
+
+\section{Hypothesis testing}
 
 \printbibliography
 

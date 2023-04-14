@@ -14,8 +14,8 @@
 clear
 
 % Read data
-optsData = detectImportOptions('hy_tlaged_logged_ct_spdata_long.xlsx');
-preview('hy_tlaged_logged_ct_spdata_long.xlsx',optsData);
+optsData = detectImportOptions('tlaged_logged_ct_spdata_long.xlsx');
+preview('tlaged_logged_ct_spdata_long.xlsx',optsData);
 optsData.SelectedVariableNames = [7:53];
 A = readmatrix('tlaged_logged_ct_spdata_long.xlsx',optsData);
 % Read weighting matrices
