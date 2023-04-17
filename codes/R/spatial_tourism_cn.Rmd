@@ -70,7 +70,7 @@ Reshape our data to long(tidy) form.
 ```{r}
 ct_spdata_long <- ct_spdata_wide %>% 
   pivot_longer(
-    cols = tarvl_2011:irev_2019,
+    cols = tarl_2011:grnld_2019,
     names_to = c(".value", "year"),
     names_pattern = "(.+)_(.+)"
   )
@@ -82,7 +82,7 @@ As you can see above. Our dataset contains 283 prefectual level cities in 9 year
 We can draw plots using `ggplot2`. (For mysterious reasons, R draw graphs freakingly slow here on my computer. It spend me 15 mins + to get a plot in base R from terminal. A bug to be addressed in the future). I skiped the evaluation of the next chunk of code and just included the graph here.
 ```{r eval=FALSE}
 plotfilter2015 <- ct_spdata_long %>% filter(year == 2015) %>% ggplot() +
-  geom_sf(aes(fill = tarvl), alpha = 0.8, col = "white")+
+  geom_sf(aes(fill = tarl), alpha = 0.8, col = "white")+
   scale_fill_viridis_c(name = "Arrivals") +
   ggtitle("Cities included in the research.")
 plotfilter2015
@@ -100,11 +100,41 @@ filter2015 %>% spdep::poly2nb("geometry") %>%
   spdep::nb2listw(zero.policy = TRUE) -> Wnb
 ```
 
+```{r}
+## Identify coordinates of the centroid of the multipolygon
+coords <- st_centroid(st_geometry(ct_spdata_wide))
+
+## Create our 3,4,5,6 NN matrix
+## Note that the latitude and longitude are handled using great circle distances
+## R2 distances will be inaccurate
+knn3W <- knearneigh(coords, k = 3)
+knn4W <- knearneigh(coords, k = 4)
+knn5W <- knearneigh(coords, k = 5)
+knn6W <- knearneigh(coords, k = 6)
+
+## Convert our knn objects to neighborhood list
+list3nn <- knn2nb(knn3W)
+list4nn <- knn2nb(knn4W)
+list5nn <- knn2nb(knn5W)
+list6nn <- knn2nb(knn6W)
+
+## Convert to a matrix object
+matrix3nn <- spdep::nb2mat(list3nn)
+matrix4nn <- spdep::nb2mat(list4nn)
+matrix5nn <- spdep::nb2mat(list5nn)
+matrix6nn <- spdep::nb2mat(list6nn)
+
+## Convert our neighborhood list to an listw object
+listw3nn <- spdep::nb2listw(list3nn) 
+## Plot the neighborhood relationships
+# plot(list4nn, coords)
+```
+
+
 ### Global Moran's I statistics
 ```{r}
 ## Calculate the Moran's I test with matrix Wnb and year 2015.
-Wnb %>%
-  spdep::moran.test(filter2015$tarvl, ., zero.policy = TRUE)
+spdep::moran.test(filter2015$tarl, listw3nn, zero.policy = TRUE)
 ```
 The result shows a positive Moran I statistics, as we expected. It is both substantively ($\approx 0.16$) and statistically significant (with a p-value $0.00001139$).
 

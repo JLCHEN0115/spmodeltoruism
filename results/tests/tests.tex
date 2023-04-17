@@ -126,8 +126,16 @@ Following the practice of \parencite{elhorstEvidencePoliticalYardstick2009a}, I 
 
 Note that this test relies on the normality of error term. But as we tested the normality before, we should be fine. 
 
+\subsection{Spatial correlation of the regression residuals}\hfill\par
+
+This tests for if there are any remaining spatial correlation in the residuals. The Lagrange multiplier test is conducted here.
+
+$\bullet$ \textbf{$H_{0}:$ There is no spatial correlation in the econometric residuals.} 
+
+The LM statistic is $0.035654$, we have no evidence against the null, with a p-value $= 0.8502$. 
+
 \subsection{Homoskedasticity of the regression residuals}\hfill\par
-A violation of homoscedasticity is indicated by a non-flat fitted line of a scale-location plot.  We fail to find evidence of heteroskedasticity.
+A violation of homoscedasticity is indicated by a non-flat fitted line of a scale-location plot.  We fail to find evidence of heteroskedasticity. LM = 16.031, df = 1, p-value = 6.232e-05
 
 \begin{figure}[hbt]
 	{\centering \includegraphics[scale=0.78]{/Users/jialiangchen/Documents/spmodeltoruism/results/hmsk.pdf}}
@@ -151,7 +159,66 @@ Below are the the variance inflation factors (VIF) for the explanatory variables
 	\end{tabularx}
 \end{table}
 
-\section{Hypothesis testing}
+\subsection{Spatially lagged dependent variable and error autocorrelation}\hfill\par
+
+This is a LM test for a spatially lagged dependent variable and error autocorrelation using panel data. (Departing from non-spatial models).
+
+$\blacksquare$ If we do not include the spatial lag independent variables, the results are as follows. 
+
+$\bullet$ \textbf{$H_{0}:$ No spatial lag dependence.} 
+
+We get a LM statistic $= 97.412$, we reject the null with a  p-value $< 2.2e-16$. 
+
+$\bullet$ \textbf{$H_{0}:$ No spatial error dependence.} 
+
+We get a LM statistic $= 15.802$, we reject the null with a  p-value $= 7.032e-05$. 
+
+\vspace{5pt}
+
+$\blacksquare$ If we include the spatial lag independent variables, the results are as follows.
+
+$\bullet$ \textbf{$H_{0}:$ No spatial lag dependence.} 
+
+We get a LM statistic $= 19.43$, we reject the null with a  p-value $= 1.044e-05$. 
+
+$\bullet$ \textbf{$H_{0}:$ No spatial error dependence.} 
+
+We get a LM statistic $= 13.141$, we reject the null with a  p-value $= 0.0002889$. 
+
+Note that these are the results if we do not control for the time fixed effects. After we controlling for the time fixed effect, there is no more evidence of spatial correlation in the residual term, as we shown earlier. The test statistics are both significantly higher for the spatial lag term than the error term.
+
+\subsection{Spatially lagged independent}\hfill\par
+
+Likelihood ratio test of whether the spatially lagged independent variables are significant.
+
+$\bullet$ \textbf{$H_{0}:$ The spatially lagged independent variables are jointly significant.} 
+
+We get a LR statistic $= 118.2782$, we reject the null with a  p-value $< 0.01$. 
+
+\subsection{Random effects and fixed effects}\hfill\par
+
+Lagrange Multiplier test for random effect.
+
+$\bullet$ \textbf{$H_{0}:$ No random effect.}
+
+The test statistics is LM*-mu $= 78.357$, we reject the null with a p-value $< 2.2e-16$.
+
+Hausman test for random effect assumption.
+
+$\bullet$ \textbf{$H_{0}:$ The preferred model is Random Effect.}
+
+The test statistics is chisq $= 79.657$, we reject the null with a p-value $= 5.862e-13$.
+
+\section{Hypothesis testing}\hfill\par
+
+\subsection{Difference between two regimes}\hfill\par
+
+Likelihood ratio test of the difference between parameters for two regimes.
+
+$\bullet$ \textbf{$H_{0}:$ There is no significant difference between two regimes.}
+
+The test statistics is chisq $= 30.2762$ with df $= 2$, we reject the null with a p-value $= 2.664445e-07$. Therefore, we reject the single-regime model in favor of the two-regime model.
+
 
 \printbibliography
 
