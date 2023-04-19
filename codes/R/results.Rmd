@@ -23,6 +23,7 @@ ct_shape <- st_read("/Users/jialiangchen/Documents/spmodeltoruism/shapefiles/chi
 ## Import more data.
 ## change the absolute path on your computer, same as above
 ct_data <- read.csv("/Users/jialiangchen/Documents/spmodeltoruism/data/dataforR.csv")
+
 ## Perform a left join for our datasets.
 ct_spdata_wide <- left_join(
   ct_shape %>% select(NL_NAME_2, geometry) %>% rename(城市shapefile = NL_NAME_2),  
@@ -30,13 +31,19 @@ ct_spdata_wide <- left_join(
   by = "城市shapefile"
 )
 
+ct_spdata_wide %<>% arrange(城市shapefile)
+
+ct_spdata_wide$indicator = 1:283
+
+ct_spdata_wide %<>% select(indicator, everything())
+
 ## Reshape our data to long(tidy) form.
 ct_spdata_long <- ct_spdata_wide %>% 
   pivot_longer(
     cols = tarl_2011:grnld_2019,
     names_to = c(".value", "year"),
     names_pattern = "(.+)_(.+)"
-  )
+  ) %>% select(indicator, everything())
 
 ## Create average tourist expenditure variable in RMBs
 ct_spdata_long %<>% 
@@ -68,9 +75,13 @@ ct_spdata_long %<>%
 
 ## check if there are still NA left
 sum(is.na(ct_spdata_long))
+## rearrange the rows
+ct_spdata_long %<>% arrange(year, 城市shapefile)
+## check they are in the right position. Important!
+identical(ct_spdata_wide$城市shapefile,( ct_spdata_long %>% filter(year == 2011))$城市shapefile)
 
 ## panel
-## CAUTION: panel structure will mess things up when calculateing Moran's I
+## CAUTION: panel structure will mess things up when calculating Moran's I
 panel_ct_spdata_long <- pdata.frame(ct_spdata_long, index = c("城市shapefile", "year"))
 ## summarize the data
 summary(ct_spdata_long)
@@ -180,72 +191,46 @@ Create spatial lagged variables.
 ```{r}
 ## Create spatial lag for some variables
 
-lagGDPpc <- slag(panel_ct_spdata_long$GDPpc, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$lagGDPpc <- lagGDPpc
-panel_ct_spdata_long$lagGDPpc <- lagGDPpc
+splag <- function(x, n, t, w){
+  wx <- rep(NA, length(x))
+  # create spatial lags
+  for (i in 1:t){
+  wx[(n*(i-1)+1):(n*i)] <- w %*% as.matrix(x[(n*(i-1)+1):(n*i)])
+  }
+  wx
+}
+  
+ct_spdata_long$lagtarl = splag(x = ct_spdata_long$tarl, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lagGDPpc = splag(x = ct_spdata_long$GDPpc, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lagslry = splag(x = ct_spdata_long$slry, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lagtarl = splag(x = ct_spdata_long$tarl, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lagpop = splag(x = ct_spdata_long$pop, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lagterti = splag(x = ct_spdata_long$terti, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$laginvest = splag(x = ct_spdata_long$invest, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lagtaxi = splag(x = ct_spdata_long$taxi, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$laghotel = splag(x = ct_spdata_long$hotel, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lagspot5A = splag(x = ct_spdata_long$spot5A, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$laggrnld = splag(x = ct_spdata_long$grnld, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lagavexp = splag(x = ct_spdata_long$tavexp, n = 283, t = 9, w = matrix3nn)
 
-lagslry <- slag(panel_ct_spdata_long$slry, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$lagslry <- lagslry
-panel_ct_spdata_long$lagslry <- lagslry
-
-lagtarl <- slag(panel_ct_spdata_long$tarl, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$lagtarl <- lagtarl
-panel_ct_spdata_long$lagtarl <- lagtarl
-
-lagpop <- slag(panel_ct_spdata_long$pop, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$lagpop <- lagpop
-panel_ct_spdata_long$lagpop <- lagpop
-
-lagterti <- slag(panel_ct_spdata_long$terti, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$lagterti <- lagterti
-panel_ct_spdata_long$lagterti <- lagterti
-
-laginvest <- slag(panel_ct_spdata_long$invest, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$laginvest <- laginvest
-panel_ct_spdata_long$laginvest <- laginvest
-
-lagtaxi <- slag(panel_ct_spdata_long$taxi, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$lagtaxi <- lagtaxi
-panel_ct_spdata_long$lagtaxi <- lagtaxi
-
-laghotel <- slag(panel_ct_spdata_long$hotel, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$laghotel <- laghotel
-panel_ct_spdata_long$laghotel <- laghotel
-
-lagspot5A <- slag(panel_ct_spdata_long$spot5A, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$lagspot5A <- lagspot5A
-panel_ct_spdata_long$lagspot5A <- lagspot5A
-
-laggrnld <- slag(panel_ct_spdata_long$grnld, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$laggrnld <- laggrnld
-panel_ct_spdata_long$laggrnld <- laggrnld
-
-lagtavexp <- slag(panel_ct_spdata_long$tavexp, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$lagtavexp <- lagtavexp
-panel_ct_spdata_long$lagtavexp <- lagtavexp
 ```
 
 ## Use time lag, log transform.
 ```{r}
+panel_ct_spdata_long <- ct_spdata_long %>% pdata.frame(index = c("城市shapefile", "year"))
 panel_tlaged_logged_ct_spdata_long <- panel_ct_spdata_long
 
 ## Use the independent variables from the previous year
-for (i in 7:ncol(tlaged_logged_ct_spdata_long)) {
+for (i in 8:ncol(panel_tlaged_logged_ct_spdata_long)) {
   panel_tlaged_logged_ct_spdata_long[[i]] <- as.numeric(lag(panel_tlaged_logged_ct_spdata_long[[i]], 1))
 }
 
-tlaged_logged_ct_spdata_long <- panel_tlaged_logged_ct_spdata_long
-tlaged_logged_ct_spdata_long <- lapply(tlaged_logged_ct_spdata_long, function(x){attr(x, "index") <- NULL; x}) %>% as.data.frame()
-
-summary(tlaged_logged_ct_spdata_long)
-
 ## Drop all observations with missing values 
-panel_tlaged_logged_ct_spdata_long <- na.omit(panel_tlaged_logged_ct_spdata_long)
-tlaged_logged_ct_spdata_long <- na.omit(tlaged_logged_ct_spdata_long)
+panel_tlaged_logged_ct_spdata_long <- panel_tlaged_logged_ct_spdata_long %>% filter(!(year == 2011)) %>% arrange(year, indicator)
 
-## Transfer all variables to log scale
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
-  mutate(across(c(tarl:inrev, hprice:road, invest:lagpop, laginvest:lagtavexp), \(x) log(x+1)))
+tlaged_logged_ct_spdata_long <- panel_tlaged_logged_ct_spdata_long 
+
+tlaged_logged_ct_spdata_long <- lapply(tlaged_logged_ct_spdata_long, function(x){attr(x, "index") <- NULL; x}) %>% as.data.frame()  %>% arrange(year, indicator)
 
 summary(tlaged_logged_ct_spdata_long)
 ```
@@ -382,11 +367,18 @@ summary(tlaged_logged_ct_spdata_long)
 #  matrix4nn %>% as.data.frame() %>% write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/4nnmatrix.xlsx")
 ```
 
+```{r}
+## Transfer all variables to log scale
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+  mutate(across(c(tarl:inrev, hprice:road, invest:lagpop, laginvest:lagavexp), \(x) log(x+1)))
+
+```
+
 ## Model tests
 
 1. **combo0**:
 ```{r}
-formula0 <- tarl ~ GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagpop + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagtavexp
+formula0 <- tarl ~ GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagpop + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagavexp
 ```
 
 2. **combo1**:
@@ -394,7 +386,7 @@ formula0 <- tarl ~ GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A +
 remove population variable as they may not be significant.
 
 ```{r}
-formula1 <- tarl ~ GDPpc + slry + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagtavexp
+formula1 <- tarl ~ GDPpc + slry + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagavexp
 ```
 
 3. **nosplag**:
@@ -413,9 +405,7 @@ summary(preg_nonspatial)
 ### Maximum likelihood estimation, pooled, lag model
 
 ```{r}
-preg0 <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, index = c("城市shapefile", "year"), listw = listw3nn, model = "pooling", lag = TRUE, spatial.error = "none")
-
-preg0_nosplag <- spml(formula = formula_nosplag, data = tlaged_logged_ct_spdata_long, index = c("城市shapefile", "year"), listw = listw3nn, model = "pooling", lag = FALSE, spatial.error = "none")
+preg0 <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, index = c("indicator", "year"), listw = listw3nn, model = "pooling", lag = TRUE, spatial.error = "none")
 
 summary(preg0)
 ```
@@ -424,18 +414,16 @@ summary(preg0)
 
 ```{r}
 ## FE individual
-preg1_fe_ind <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, model = "within", effect = "individual", lag = TRUE, spatial.error = "none", index = c("城市shapefile", "year"))
+preg1_fe_ind <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, model = "within", effect = "individual", lag = TRUE, spatial.error = "none", index = c("indicator", "year"))
 
 ## FE time
-preg1_fe_time <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, model = "within", effect = "time", lag = TRUE, spatial.error = "none", index = c("城市shapefile", "year"))
+preg1_fe_time <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, model = "within", effect = "time", lag = TRUE, spatial.error = "none", index = c("indicator", "year"))
 
 ## FE twoway
-preg1_fe <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, model = "within", effect = "twoway", lag = TRUE, spatial.error = "none", index = c("城市shapefile", "year"))
-
-## insignificant spatial effects. This is due to the estimation of individual fixed effects - we only use 8 years for each unit to estimate.
+preg1_fe <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, model = "within", effect = "twoway", lag = TRUE, spatial.error = "none", index = c("indicator", "year"))
 
 ## see what if we estimate the random effect model
-preg1_re <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, index = c("城市shapefile", "year"), listw = listw3nn, model = "random", lag = TRUE, spatial.error = "none")
+preg1_re <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, index = c("indicator", "year"), listw = listw3nn, model = "random", lag = TRUE, spatial.error = "none")
 
 summary(preg1_fe_ind)
 summary(preg1_fe_time)
@@ -505,10 +493,8 @@ This points us to the spatial lag model.
 
 ```{r}
 # rearrange data so that they are stacked as [city1,...,city283 ] in year 1, then  [city1,...,city283 ] in year 2 ...
-stacked_tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
-   arrange(year, 城市shapefile) 
 ## import and wrange regression results data
-results <- read.xlsx("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/results.xlsx", 1) %>% data.table::transpose(make.names = "OriginalVariableNames") %>% mutate(城市shapefile = stacked_tlaged_logged_ct_spdata_long$城市shapefile, year = stacked_tlaged_logged_ct_spdata_long$year) %>% select(c("城市shapefile", "year", "y", "yhat", "resid")) 
+results <- read.xlsx("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/results.xlsx", 1) %>% data.table::transpose(make.names = "OriginalVariableNames") %>% mutate(城市shapefile =tlaged_logged_ct_spdata_long$城市shapefile, indicator = tlaged_logged_ct_spdata_long$indicator, year = tlaged_logged_ct_spdata_long$year) %>% select(c("indicator", "城市shapefile", "year", "y", "yhat", "resid")) 
 
 ## our cols are co coerased into characters, we need to bring them back to numeric values
 results[c("y", "yhat", "resid")] <- map(results[c("y", "yhat", "resid")], as.numeric)
@@ -521,7 +507,7 @@ sum(results$y - stacked_tlaged_logged_ct_spdata_long$tarl) # should be basically
 str(results)
 
 ## add spatial information
-ct_spdata_long_result_auged <- left_join(ct_spdata_long, results, by = c("城市shapefile", "year"))
+ct_spdata_long_result_auged <- left_join(ct_spdata_long, results, by = c("indicator", "year"))
 
 ## To test for normality, we need to first standardize the redisuals
 results <- results %>% mutate(standized_resid = resid / sd(resid))
@@ -545,7 +531,7 @@ normality_test
 ### Serial corrrelation in the residual
 
 ```{r}
-panel_results <- pdata.frame(results, index = c("城市shapefile", "year"))
+panel_results <- pdata.frame(results, index = c("indicator", "year"))
 panel_results <- panel_results %>% mutate(tlaged_resid = lag(panel_results[["resid"]], 1))
 panel_results <- panel_results %>% mutate(tlagedlaged_resid = lag(panel_results[["resid"]], 2))
 panel_results <- panel_results %>% mutate(tlagedlagedlaged_resid = lag(panel_results[["resid"]], 3))
@@ -572,7 +558,7 @@ mean(ser_corr < 0.1)
 ### lm test for spatial correlation in the residual
 
 ```{r}
-slmtest(resid ~ 1, data = ct_spdata_long_result_auged, listw = listw3nn, index = c("城市shapefile", "year"), model="pooling", test = "lml")
+slmtest(resid ~ 1, data = ct_spdata_long_result_auged, listw = listw3nn, index = c("indicator", "year"), model="pooling", test = "lml")
 ```
 
 ### Breusch-Pagan test for homoskedasticity

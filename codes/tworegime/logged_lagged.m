@@ -16,7 +16,7 @@ clear
 % Read data
 optsData = detectImportOptions('tlaged_logged_ct_spdata_long.xlsx');
 preview('tlaged_logged_ct_spdata_long.xlsx',optsData);
-optsData.SelectedVariableNames = [7:53];
+optsData.SelectedVariableNames = [8:59];
 A = readmatrix('tlaged_logged_ct_spdata_long.xlsx',optsData);
 % Read weighting matrices
  W3nn = readmatrix('3nnmatrix.xlsx','Range','B2:JX284');
@@ -27,9 +27,6 @@ A = readmatrix('tlaged_logged_ct_spdata_long.xlsx',optsData);
 % Wd100nb = readmatrix('d100nbmatrix.xlsx','Range','B2:JX284');
 % Wd150nb = readmatrix('d150nbmatrix.xlsx','Range','B2:JX284');
 % Wd200nb = readmatrix('d200nbmatrix.xlsx','Range','B2:JX284');
-
-% Row-normalize W
-W3nn=normr(W3nn);
 
 
 % Model parameters and y and x variables
@@ -43,13 +40,17 @@ nobs=N*T;
 K=20;
 
 y=A(:,1); % column number in the data matrix that corresponds to the dependent variable
-dum=A(:,41); % column number in the data matrix that corresponds to the regime indicator
+dum=A(:,52); % column number in the data matrix that corresponds to the regime indicator
 xh=A(:,[11,12,13,16,17,20,21,22,25,26]);% column numbers in the data matrix that correspond to the independent variables, no constant because it will be eliminated
 % Create wx variables
 for t=1:T
     t1=1+(t-1)*N;t2=t*N;
     W3nnx(t1:t2,:)= W3nn*xh(t1:t2,:);
 end
+% log transformation
+y=log(1+y); 
+xh=log(1 + xh);
+W3nnx=log(1 + W3nnx);
 x=[dum xh W3nnx];
 info.model=3;
 results = sarregime_panel(y,x,dum,W3nn,T,info);

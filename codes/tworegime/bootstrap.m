@@ -6,8 +6,6 @@ optsData.SelectedVariableNames = [7:53];
 A = readmatrix('tlaged_logged_ct_spdata_long.xlsx',optsData);
 % Read weighting matrices
 W3nn = readmatrix('3nnmatrix.xlsx','Range','B2:JX284');
-% Row-normalize W
-W3nn=normr(W3nn);
 % number of units
 N=283;
 % time periods

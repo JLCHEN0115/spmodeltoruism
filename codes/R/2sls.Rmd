@@ -1,7 +1,7 @@
 ---
-title: "2sls"
+title: "results"
 author: "Jialiang"
-date: "2023-04-18"
+date: "2023-03-27"
 output: html_document
 ---
 
@@ -23,6 +23,7 @@ ct_shape <- st_read("/Users/jialiangchen/Documents/spmodeltoruism/shapefiles/chi
 ## Import more data.
 ## change the absolute path on your computer, same as above
 ct_data <- read.csv("/Users/jialiangchen/Documents/spmodeltoruism/data/dataforR.csv")
+
 ## Perform a left join for our datasets.
 ct_spdata_wide <- left_join(
   ct_shape %>% select(NL_NAME_2, geometry) %>% rename(城市shapefile = NL_NAME_2),  
@@ -30,13 +31,19 @@ ct_spdata_wide <- left_join(
   by = "城市shapefile"
 )
 
+ct_spdata_wide %<>% arrange(城市shapefile)
+
+ct_spdata_wide$indicator = 1:283
+
+ct_spdata_wide %<>% select(indicator, everything())
+
 ## Reshape our data to long(tidy) form.
 ct_spdata_long <- ct_spdata_wide %>% 
   pivot_longer(
     cols = tarl_2011:grnld_2019,
     names_to = c(".value", "year"),
     names_pattern = "(.+)_(.+)"
-  )
+  ) %>% select(indicator, everything())
 
 ## Create average tourist expenditure variable in RMBs
 ct_spdata_long %<>% 
@@ -68,9 +75,13 @@ ct_spdata_long %<>%
 
 ## check if there are still NA left
 sum(is.na(ct_spdata_long))
+## rearrange the rows
+ct_spdata_long %<>% arrange(year, 城市shapefile)
+## check they are in the right position. Important!
+identical(ct_spdata_wide$城市shapefile,( ct_spdata_long %>% filter(year == 2011))$城市shapefile)
 
 ## panel
-## CAUTION: panel structure will mess things up when calculateing Moran's I
+## CAUTION: panel structure will mess things up when calculating Moran's I
 panel_ct_spdata_long <- pdata.frame(ct_spdata_long, index = c("城市shapefile", "year"))
 ## summarize the data
 summary(ct_spdata_long)
@@ -178,121 +189,67 @@ ct_spdata_wide %>% spdep::poly2nb("geometry") %>%  spdep::nb2listw(zero.policy =
 
 Create spatial lagged variables.
 ```{r}
-## Create spatial lag for some variable
-lagGDPpc <- slag(panel_ct_spdata_long$GDPpc, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$lagGDPpc <- lagGDPpc
-panel_ct_spdata_long$lagGDPpc <- lagGDPpc
+## Create spatial lag for some variables
 
-lagslry <- slag(panel_ct_spdata_long$slry, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$lagslry <- lagslry
-panel_ct_spdata_long$lagslry <- lagslry
+splag <- function(x, n, t, w){
+  wx <- rep(NA, length(x))
+  # create spatial lags
+  for (i in 1:t){
+  wx[(n*(i-1)+1):(n*i)] <- w %*% as.matrix(x[(n*(i-1)+1):(n*i)])
+  }
+  wx
+}
+  
+ct_spdata_long$lagtarl = splag(x = ct_spdata_long$tarl, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lagGDPpc = splag(x = ct_spdata_long$GDPpc, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lagslry = splag(x = ct_spdata_long$slry, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lagtarl = splag(x = ct_spdata_long$tarl, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lagpop = splag(x = ct_spdata_long$pop, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lagterti = splag(x = ct_spdata_long$terti, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$laginvest = splag(x = ct_spdata_long$invest, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lagtaxi = splag(x = ct_spdata_long$taxi, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$laghotel = splag(x = ct_spdata_long$hotel, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lagspot5A = splag(x = ct_spdata_long$spot5A, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$laggrnld = splag(x = ct_spdata_long$grnld, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lagavexp = splag(x = ct_spdata_long$tavexp, n = 283, t = 9, w = matrix3nn)
 
-lagtarl <- slag(panel_ct_spdata_long$tarl, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$lagtarl <- lagtarl
-panel_ct_spdata_long$lagtarl <- lagtarl
-
-lagpop <- slag(panel_ct_spdata_long$pop, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$lagpop <- lagpop
-panel_ct_spdata_long$lagpop <- lagpop
-
-lagterti <- slag(panel_ct_spdata_long$terti, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$lagterti <- lagterti
-panel_ct_spdata_long$lagterti <- lagterti
-
-laginvest <- slag(panel_ct_spdata_long$invest, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$laginvest <- laginvest
-panel_ct_spdata_long$laginvest <- laginvest
-
-lagtaxi <- slag(panel_ct_spdata_long$taxi, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$lagtaxi <- lagtaxi
-panel_ct_spdata_long$lagtaxi <- lagtaxi
-
-laghotel <- slag(panel_ct_spdata_long$hotel, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$laghotel <- laghotel
-panel_ct_spdata_long$laghotel <- laghotel
-
-lagspot5A <- slag(panel_ct_spdata_long$spot5A, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$lagspot5A <- lagspot5A
-panel_ct_spdata_long$lagspot5A <- lagspot5A
-
-laggrnld <- slag(panel_ct_spdata_long$grnld, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$laggrnld <- laggrnld
-panel_ct_spdata_long$laggrnld <- laggrnld
-
-lagtavexp <- slag(panel_ct_spdata_long$tavexp, listw = listw3nn) %>% as.numeric( )
-ct_spdata_long$lagtavexp <- lagtavexp
-panel_ct_spdata_long$lagtavexp <- lagtavexp
 ```
 
-lag them again.
 ```{r}
-## Create spatial lag for some variable
-lag2GDPpc <- slag(panel_ct_spdata_long$lagGDPpc, listw = listwnb) %>% as.numeric( )
-ct_spdata_long$lag2GDPpc <- lag2GDPpc
-panel_ct_spdata_long$lag2GDPpc <- lag2GDPpc
+## Create second order spatial lag for ind variables
 
-lag2slry <- slag(panel_ct_spdata_long$lagslry, listw = listwnb) %>% as.numeric( )
-ct_spdata_long$lag2slry <- lag2slry
-panel_ct_spdata_long$lag2slry <- lag2slry
+ct_spdata_long$lag2tarl = splag(x = ct_spdata_long$lagtarl, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lag2GDPpc = splag(x = ct_spdata_long$lagGDPpc, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lag2slry = splag(x = ct_spdata_long$lagslry, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lag2tarl = splag(x = ct_spdata_long$lagtarl, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lag2pop = splag(x = ct_spdata_long$lagpop, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lag2terti = splag(x = ct_spdata_long$lagterti, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lag2invest = splag(x = ct_spdata_long$laginvest, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lag2taxi = splag(x = ct_spdata_long$lagtaxi, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lag2hotel = splag(x = ct_spdata_long$laghotel, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lag2spot5A = splag(x = ct_spdata_long$lagspot5A, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lag2grnld = splag(x = ct_spdata_long$laggrnld, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lag2avexp = splag(x = ct_spdata_long$lagavexp, n = 283, t = 9, w = matrix3nn)
 
-lag2tarl <- slag(panel_ct_spdata_long$lagtarl, listw = listwnb) %>% as.numeric( )
-ct_spdata_long$lag2tarl <- lag2tarl
-panel_ct_spdata_long$lag2tarl <- lag2tarl
-
-lag2pop <- slag(panel_ct_spdata_long$lagpop, listw = listwnb) %>% as.numeric( )
-ct_spdata_long$lag2pop <- lag2pop
-panel_ct_spdata_long$lag2pop <- lag2pop
-
-lag2terti <- slag(panel_ct_spdata_long$lagterti, listw = listwnb) %>% as.numeric( )
-ct_spdata_long$lag2terti <- lag2terti
-panel_ct_spdata_long$lag2terti <- lag2terti
-
-lag2invest <- slag(panel_ct_spdata_long$laginvest, listw = listwnb) %>% as.numeric( )
-ct_spdata_long$lag2invest <- lag2invest
-panel_ct_spdata_long$lag2invest <- lag2invest
-
-lag2taxi <- slag(panel_ct_spdata_long$lagtaxi, listw = listwnb) %>% as.numeric( )
-ct_spdata_long$lag2taxi <- lag2taxi
-panel_ct_spdata_long$lag2taxi <- lag2taxi
-
-lag2hotel <- slag(panel_ct_spdata_long$laghotel, listw = listwnb) %>% as.numeric( )
-ct_spdata_long$lag2hotel <- lag2hotel
-panel_ct_spdata_long$lag2hotel <- lag2hotel
-
-lag2spot5A <- slag(panel_ct_spdata_long$lagspot5A, listw = listwnb) %>% as.numeric( )
-ct_spdata_long$lag2spot5A <- lag2spot5A
-panel_ct_spdata_long$lag2spot5A <- lag2spot5A
-
-lag2grnld <- slag(panel_ct_spdata_long$laggrnld, listw = listwnb) %>% as.numeric( )
-ct_spdata_long$lag2grnld <- lag2grnld
-panel_ct_spdata_long$lag2grnld <- lag2grnld
-
-lag2tavexp <- slag(panel_ct_spdata_long$lagtavexp, listw = listwnb) %>% as.numeric( )
-ct_spdata_long$lag2tavexp <- lag2tavexp
-panel_ct_spdata_long$lag2tavexp <- lag2tavexp
 ```
+
 
 ## Use time lag, log transform.
 ```{r}
+panel_ct_spdata_long <- ct_spdata_long %>% pdata.frame(index = c("城市shapefile", "year"))
 panel_tlaged_logged_ct_spdata_long <- panel_ct_spdata_long
 
 ## Use the independent variables from the previous year
-for (i in 7:ncol(panel_tlaged_logged_ct_spdata_long)) {
+for (i in 8:ncol(panel_tlaged_logged_ct_spdata_long)) {
   panel_tlaged_logged_ct_spdata_long[[i]] <- as.numeric(lag(panel_tlaged_logged_ct_spdata_long[[i]], 1))
 }
 
-tlaged_logged_ct_spdata_long <- panel_tlaged_logged_ct_spdata_long
-tlaged_logged_ct_spdata_long <- lapply(tlaged_logged_ct_spdata_long, function(x){attr(x, "index") <- NULL; x}) %>% as.data.frame()
-
-summary(tlaged_logged_ct_spdata_long)
-
 ## Drop all observations with missing values 
-panel_tlaged_logged_ct_spdata_long <- na.omit(panel_tlaged_logged_ct_spdata_long)
-tlaged_logged_ct_spdata_long <- na.omit(tlaged_logged_ct_spdata_long)
+panel_tlaged_logged_ct_spdata_long <- panel_tlaged_logged_ct_spdata_long %>% filter(!(year == 2011)) %>% arrange(year, indicator)
 
-## Transfer all variables to log scale
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
-  mutate(across(c(tarl:inrev, hprice:road, invest:lagpop, laginvest:lag2tavexp), \(x) log(x+1)))
+tlaged_logged_ct_spdata_long <- panel_tlaged_logged_ct_spdata_long 
+
+tlaged_logged_ct_spdata_long <- lapply(tlaged_logged_ct_spdata_long, function(x){attr(x, "index") <- NULL; x}) %>% as.data.frame()  %>% arrange(year, indicator)
 
 summary(tlaged_logged_ct_spdata_long)
 ```
@@ -416,31 +373,44 @@ tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
 summary(tlaged_logged_ct_spdata_long)
 ```
 
-Create lagged y variables
+
 ```{r}
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>% mutate(Dtral5gdp = lagtarl * indicator_gdpps5)
+# 
+# tlaged_logged_ct_spdata_long %>%
+#    as.data.frame() %>%
+#    select(!geometry) %>%
+#    arrange(year, 城市shapefile)  %>%
+#  xlsx::write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/tlaged_logged_ct_spdata_long.xlsx")
+#  
+#  ## output weight matrix (4nn)
+#  matrix4nn %>% as.data.frame() %>% write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/4nnmatrix.xlsx")
+```
 
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>% mutate(neDtral5gdp = lagtarl * (1 - indicator_gdpps5))
+```{r}
+## Transfer all variables to log scale
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+  mutate(across(c(tarl:inrev, hprice:road, invest:lagpop, laginvest:lag2pop,lag2invest:lag2avexp ), \(x) log(x+1)))
 
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>% mutate(Dtral10gdp = lagtarl * indicator_gdpps10)
+```
 
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>% mutate(neDtral10gdp = lagtarl * (1-indicator_gdpps10))
+## Model tests
 
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>% mutate(Dtralgdp = lagtarl * indicator_gdp)
+1. **combo0**:
+```{r}
+formula0 <- tarl ~ GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagpop + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagavexp
+```
 
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>% mutate(neDtralgdp = lagtarl * (1 - indicator_gdp))
+2. **combo1**:
 
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>% mutate(Dtralgdpne5to0 = lagtarl * indicator_gdpne5to0)
+remove population variable as they may not be significant.
 
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>% mutate(neDtralgdpne5to0 = lagtarl * (1 - indicator_gdpne5to0))
+```{r}
+formula1 <- tarl ~ GDPpc + slry + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagavexp
+```
 
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>% mutate(Dtral_tarl = lagtarl * indicator_tarl)
-
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>% mutate(neDtral_tarl = lagtarl * (1 - indicator_tarl))
-
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>% mutate(Dtral_5a = lagtarl * indicator_5A)
-
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>% mutate(neDtral_5a = lagtarl * (1 - indicator_5A))
+3. **nosplag**:
+```{r}
+formula_nosplag <- tarl ~ GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp 
 ```
 
 ```{r}
@@ -456,18 +426,21 @@ tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>% mutate(neDtral_
 ```
 
 ```{r}
-test <- tarl ~ Dtral5gdp + neDtral5gdp + GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagpop + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagtavexp |. - Dtral5gdp - neDtral5gdp + GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagpop + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagtavexp+ lag2GDPpc + lag2slry + lag2pop + lag2terti + lag2invest + lag2taxi + lag2hotel + lag2spot5A + lag2grnld + lag2tavexp
+# create regime y
+tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>% mutate(Dtralgdp = lagtarl*indicator_gdp, neDtralgdp = lagtarl*(1-indicator_gdp))
+
+test <- tarl ~ Dtralgdp + neDtralgdp + GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagpop + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagavexp |. - Dtralgdp - neDtralgdp + GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagpop + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagavexp+ lag2GDPpc + lag2slry + lag2pop + lag2terti + lag2invest + lag2taxi + lag2hotel + lag2spot5A + lag2grnld + lag2avexp
 
 
-plm(formula = test, index= c("城市shapefile", "year"), data = tlaged_logged_ct_spdata_long, model = "within", effect = "twoway") %>% summary()
+plm(formula = test, index= c("indicator", "year"), data = tlaged_logged_ct_spdata_long, model = "within", effect = "twoway") %>% summary()
 ```
 
 But that result is not reliable. Our 2sls result is suffering from weak IV bias.The F-statistic for the regression of `Dtral5gdp` on the excluded instruments is only $5.11392$ and a negative adjusted R-square - they should be interpreted as $0$. ($5.49777$ F-statistic and also negative adjusted R-square for `neDtral5gdp`) .
 
 ```{r}
-first_stage <- plm(formula = neDtral5gdp ~ lag2GDPpc + lag2slry + lag2pop + lag2terti + 
+first_stage <- plm(formula = neDtralgdp ~ lag2GDPpc + lag2slry + lag2pop + lag2terti + 
     lag2invest + lag2taxi + lag2hotel + lag2spot5A + lag2grnld + 
-    lag2tavexp, data = tlaged_logged_ct_spdata_long, effect = "twoway", 
+    lag2avexp, data = tlaged_logged_ct_spdata_long, effect = "twoway", 
     model = "within", index = c("城市shapefile", "year"))
 summary(first_stage)
 ```
@@ -475,7 +448,7 @@ summary(first_stage)
 The result is biased towards OLS.
 
 ```{r}
-plm(formula = tarl ~ Dtral5gdp + neDtral5gdp + GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagpop + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagtavexp + GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagpop + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagtavexp, data = tlaged_logged_ct_spdata_long, effect = "twoway", 
+plm(formula = tarl ~ Dtralgdp + neDtralgdp + GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagpop + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagavexp + lag2GDPpc + lag2slry + lag2pop + lag2terti + lag2invest + lag2taxi + lag2hotel + lag2spot5A + lag2grnld + lag2avexp, data = tlaged_logged_ct_spdata_long, effect = "twoway", 
     model = "within", index = c("城市shapefile", "year")) %>% summary()
 ```
 
