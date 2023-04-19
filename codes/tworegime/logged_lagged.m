@@ -57,10 +57,10 @@ vnames=char('total arrivals','dum','GDPpc','salary','population','third industry
 prt_spreg(results,vnames,1);
 
 % results for the restricted model
-x2 = [xh W3nnx];
-results2 = sar_panel_FE(y,x2,W3nn,T,info);
-vnames2 = char('total arrivals','GDPpc','salary','population','third industry','investment','taxi','hotel','5A spots','green land','average expense','lagGDPpc','lagslry','lagpop','lagteri','laginvest','lagtaxi','laghotel','lagspot5A','laggrnld','lagavexp');
-prt_sp(results2,vnames2,1);
+% x2 = [xh W3nnx];
+% results2 = sar_panel_FE(y,x2,W3nn,T,info);
+% vnames2 = char('total arrivals','GDPpc','salary','population','third industry','investment','taxi','hotel','5A spots','green land','average expense','lagGDPpc','lagslry','lagpop','lagteri','laginvest','lagtaxi','laghotel','lagspot5A','laggrnld','lagavexp');
+% prt_sp(results2,vnames2,1);
 % convert the structure to a table
 % T = struct2table(results,"AsArray",true);
 % T = rows2vars(T);
