@@ -462,6 +462,23 @@ test <- tarl ~ Dtral5gdp + neDtral5gdp + GDPpc + slry + pop + terti + invest + t
 plm(formula = test, index= c("城市shapefile", "year"), data = tlaged_logged_ct_spdata_long, model = "within", effect = "twoway") %>% summary()
 ```
 
+But that result is not reliable. Our 2sls result is suffering from weak IV bias.The F-statistic for the regression of `Dtral5gdp` on the excluded instruments is only $5.11392$ and a negative adjusted R-square - they should be interpreted as $0$. ($5.49777$ F-statistic and also negative adjusted R-square for `neDtral5gdp`) .
+
+```{r}
+first_stage <- plm(formula = neDtral5gdp ~ lag2GDPpc + lag2slry + lag2pop + lag2terti + 
+    lag2invest + lag2taxi + lag2hotel + lag2spot5A + lag2grnld + 
+    lag2tavexp, data = tlaged_logged_ct_spdata_long, effect = "twoway", 
+    model = "within", index = c("城市shapefile", "year"))
+summary(first_stage)
+```
+
+The result is biased towards OLS.
+
+```{r}
+plm(formula = tarl ~ Dtral5gdp + neDtral5gdp + GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagpop + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagtavexp + GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagpop + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagtavexp, data = tlaged_logged_ct_spdata_long, effect = "twoway", 
+    model = "within", index = c("城市shapefile", "year")) %>% summary()
+```
+
 
 ## Model tests
 
