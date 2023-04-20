@@ -17,7 +17,7 @@ nobs=N*T;
 % including lagged x (if any)
 K=20;
 % the time of bootstrap
-nBootstrap = 1000;
+nBootstrap = 2;
 
 % Initialize a matrix to store the stacked data
 stackedData = zeros(N*T,size(A,2));
@@ -49,10 +49,7 @@ for i = 1:nBootstrap
        end
     end
     % row-normalization the new weighting matrix
-    row_sums = sum(weight, 2);
-    nonzero_rows = row_sums ~= 0;
-    weight(nonzero_rows,:) = weight(nonzero_rows,:) ./ row_sums(nonzero_rows,:);
-
+    weight = weight
     % Perform estimation
     y=stackedData(:,1); % column number in the data matrix that corresponds to the dependent variable
     dum=stackedData(:,41); % column number in the data matrix that corresponds to the regime indicator
