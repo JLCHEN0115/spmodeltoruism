@@ -76,7 +76,7 @@ ct_spdata_long %<>%
 ## check if there are still NA left
 sum(is.na(ct_spdata_long))
 ## rearrange the rows
-ct_spdata_long %<>% arrange(year, 城市shapefile)
+ct_spdata_long %<>% arrange(year, indicator)
 ## check they are in the right position. Important!
 identical(ct_spdata_wide$城市shapefile,( ct_spdata_long %>% filter(year == 2011))$城市shapefile)
 
@@ -161,7 +161,7 @@ matrix5nn <- spdep::nb2mat(list5nn)
 matrix6nn <- spdep::nb2mat(list6nn)
 
 ## Convert our neighborhood list to an listw object
-listw3nn <- spdep::nb2listw(list3nn) 
+listw6nn <- spdep::nb2listw(list6nn) 
 ## Plot the neighborhood relationships
 # plot(list4nn, coords)
 ```
@@ -200,45 +200,45 @@ splag <- function(x, n, t, w){
   wx
 }
   
-ct_spdata_long$lagtarl = splag(x = ct_spdata_long$tarl, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lagGDPpc = splag(x = ct_spdata_long$GDPpc, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lagslry = splag(x = ct_spdata_long$slry, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lagtarl = splag(x = ct_spdata_long$tarl, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lagpop = splag(x = ct_spdata_long$pop, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lagterti = splag(x = ct_spdata_long$terti, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$laginvest = splag(x = ct_spdata_long$invest, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lagtaxi = splag(x = ct_spdata_long$taxi, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$laghotel = splag(x = ct_spdata_long$hotel, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lagspot5A = splag(x = ct_spdata_long$spot5A, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$laggrnld = splag(x = ct_spdata_long$grnld, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lagavexp = splag(x = ct_spdata_long$tavexp, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lagtarl = splag(x = ct_spdata_long$tarl, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lagGDPpc = splag(x = ct_spdata_long$GDPpc, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lagslry = splag(x = ct_spdata_long$slry, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lagtarl = splag(x = ct_spdata_long$tarl, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lagpop = splag(x = ct_spdata_long$pop, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lagterti = splag(x = ct_spdata_long$terti, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$laginvest = splag(x = ct_spdata_long$invest, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lagtaxi = splag(x = ct_spdata_long$taxi, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$laghotel = splag(x = ct_spdata_long$hotel, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lagspot5A = splag(x = ct_spdata_long$spot5A, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$laggrnld = splag(x = ct_spdata_long$grnld, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lagavexp = splag(x = ct_spdata_long$tavexp, n = 283, t = 9, w = matrix6nn)
 
 ```
 
-## Use time lag, log transform.
+## Use time lag
 ```{r}
 panel_ct_spdata_long <- ct_spdata_long %>% pdata.frame(index = c("城市shapefile", "year"))
-panel_tlaged_logged_ct_spdata_long <- panel_ct_spdata_long
+panel_tlaged_ct_spdata_long <- panel_ct_spdata_long
 
 ## Use the independent variables from the previous year
-for (i in 8:ncol(panel_tlaged_logged_ct_spdata_long)) {
-  panel_tlaged_logged_ct_spdata_long[[i]] <- as.numeric(lag(panel_tlaged_logged_ct_spdata_long[[i]], 1))
+for (i in 8:ncol(panel_tlaged_ct_spdata_long)) {
+  panel_tlaged_ct_spdata_long[[i]] <- as.numeric(lag(panel_tlaged_ct_spdata_long[[i]], 1))
 }
 
 ## Drop all observations with missing values 
-panel_tlaged_logged_ct_spdata_long <- panel_tlaged_logged_ct_spdata_long %>% filter(!(year == 2011)) %>% arrange(year, indicator)
+panel_tlaged_ct_spdata_long <- panel_tlaged_ct_spdata_long %>% filter(!(year == 2011)) %>% arrange(year, indicator)
 
-tlaged_logged_ct_spdata_long <- panel_tlaged_logged_ct_spdata_long 
+tlaged_ct_spdata_long <- panel_tlaged_ct_spdata_long 
 
-tlaged_logged_ct_spdata_long <- lapply(tlaged_logged_ct_spdata_long, function(x){attr(x, "index") <- NULL; x}) %>% as.data.frame()  %>% arrange(year, indicator)
+tlaged_ct_spdata_long <- lapply(tlaged_ct_spdata_long, function(x){attr(x, "index") <- NULL; x}) %>% as.data.frame()  %>% arrange(year, indicator)
 
-summary(tlaged_logged_ct_spdata_long)
+summary(tlaged_ct_spdata_long)
 ```
 
 ## Create indicators using different variables
 ```{r}
 ## Create indicators using total arrivals
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
    mutate(
      indicator_tarl = case_when(
       tarl >= lagtarl ~  1,
@@ -247,7 +247,7 @@ tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
    )
 
 ## Create indicators using GDP per capita
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
    mutate(
      indicator_gdp = case_when(
       GDPpc >= lagGDPpc ~  1,
@@ -256,13 +256,13 @@ tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
    )
 
 ## percentage GDP gap
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
    mutate(GDP_percent = (GDPpc - lagGDPpc) / lagGDPpc)
 
-summary(tlaged_logged_ct_spdata_long$GDP_percent)
+summary(tlaged_ct_spdata_long$GDP_percent)
 
 ## -10 prcent GDP
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
    mutate(
      indicator_gdpne10 = case_when(
       GDP_percent >= -0.10 ~  1,
@@ -271,7 +271,7 @@ tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
    )
 
 ## -5 prcent GDP
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
    mutate(
      indicator_gdpne5 = case_when(
       GDP_percent >= -0.05 ~  1,
@@ -280,7 +280,7 @@ tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
    )
 
 ## 5 prcent GDP
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
    mutate(
      indicator_gdpps5 = case_when(
       GDP_percent >= 0.05 ~  1,
@@ -289,7 +289,7 @@ tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
    )
 
 ## 10 prcent GDP
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
    mutate(
      indicator_gdpps10 = case_when(
       GDP_percent >= 0.1 ~  1,
@@ -298,7 +298,7 @@ tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
    )
 
 ## [-0.05, 0] percent GDP
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
    mutate(
      indicator_gdpne5to0 = case_when(
       GDP_percent >= -0.05 & GDP_percent <= 0 ~  1,
@@ -306,26 +306,8 @@ tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
      )
    )
 
-## [0, 0.05] percent GDP
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
-   mutate(
-     indicator_gdp0tops5 = case_when(
-      GDP_percent >= 0 & GDP_percent <= 0.05 ~  1,
-      GDP_percent < 0 | GDP_percent > 0.05  ~ 0
-     )
-   )
-
-## (0.05, 0.1) percent GDP
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
-   mutate(
-     indicator_gdpps5to10 = case_when(
-      GDP_percent >= 0.05 & GDP_percent <= 0.1 ~  1,
-      GDP_percent < 0.05 | GDP_percent > 0.1  ~ 0
-     )
-   )
-
 ## Create indicators using number of hotels
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
    mutate(
      indicator_hotel = case_when(
       hotel >= laghotel ~  1,
@@ -334,7 +316,7 @@ tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
    )
 
 ## Create indicators using number of 5A spots
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
    mutate(
      indicator_5A = case_when(
       spot5A >= lagspot5A ~  1,
@@ -343,7 +325,7 @@ tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
    )
 
 ## Create indicators using third industry development level
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
    mutate(
      indicator_terti = case_when(
       terti >= lagterti ~  1,
@@ -351,25 +333,33 @@ tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
      )
    )
 
-summary(tlaged_logged_ct_spdata_long)
+summary(tlaged_ct_spdata_long)
 ```
 
 
 ```{r}
-# 
-# tlaged_logged_ct_spdata_long %>%
-#    as.data.frame() %>%
-#    select(!geometry) %>%
-#    arrange(year, 城市shapefile)  %>%
-#  xlsx::write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/tlaged_logged_ct_spdata_long.xlsx")
-#  
+# check they are in the right position
+# important!!
+location_test <- rep(FALSE, 8)
+
+for (i in 1:8){
+  location_test[[i]] <-   identical(ct_spdata_wide$城市shapefile,(as.character(tlaged_ct_spdata_long$城市shapefile))[(283*(i-1)+1):(283*i)])
+}
+
+location_test # should be 8 TRUEs
+
+# tlaged_ct_spdata_long %>%
+#        as.data.frame() %>%
+#        select(!geometry) %>%
+#      xlsx::write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/tlaged_ct_spdata_long.xlsx")
+
 #  ## output weight matrix (4nn)
 #  matrix4nn %>% as.data.frame() %>% write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/4nnmatrix.xlsx")
 ```
 
 ```{r}
 ## Transfer all variables to log scale
-tlaged_logged_ct_spdata_long <- tlaged_logged_ct_spdata_long %>%
+tlaged_logged_ct_spdata_long <- tlaged_ct_spdata_long %>%
   mutate(across(c(tarl:inrev, hprice:road, invest:lagpop, laginvest:lagavexp), \(x) log(x+1)))
 
 ```
@@ -398,14 +388,14 @@ formula_nosplag <- tarl ~ GDPpc + slry + pop + terti + invest + taxi + hotel + s
 
 ### nonspatial pooled model
 ```{r}
-preg_nonspatial <- plm(formula = tarl ~ GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp, data = tlaged_logged_ct_spdata_long, index = c("城市shapefile", "year"), model = "pooling")
+preg_nonspatial <- plm(formula = tarl ~ GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp, data = tlaged_logged_ct_spdata_long, index = c("indicator", "year"), model = "pooling")
 summary(preg_nonspatial)
 ```
 
 ### Maximum likelihood estimation, pooled, lag model
 
 ```{r}
-preg0 <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, index = c("indicator", "year"), listw = listw3nn, model = "pooling", lag = TRUE, spatial.error = "none")
+preg0 <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, index = c("indicator", "year"), listw = listw6nn, model = "pooling", lag = TRUE, spatial.error = "none")
 
 summary(preg0)
 ```
@@ -414,16 +404,16 @@ summary(preg0)
 
 ```{r}
 ## FE individual
-preg1_fe_ind <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, model = "within", effect = "individual", lag = TRUE, spatial.error = "none", index = c("indicator", "year"))
+preg1_fe_ind <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw6nn, model = "within", effect = "individual", lag = TRUE, spatial.error = "none", index = c("indicator", "year"))
 
 ## FE time
-preg1_fe_time <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, model = "within", effect = "time", lag = TRUE, spatial.error = "none", index = c("indicator", "year"))
+preg1_fe_time <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw6nn, model = "within", effect = "time", lag = TRUE, spatial.error = "none", index = c("indicator", "year"))
 
 ## FE twoway
-preg1_fe <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, model = "within", effect = "twoway", lag = TRUE, spatial.error = "none", index = c("indicator", "year"))
+preg1_fe <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw6nn, model = "within", effect = "twoway", lag = TRUE, spatial.error = "none", index = c("indicator", "year"))
 
 ## see what if we estimate the random effect model
-preg1_re <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, index = c("indicator", "year"), listw = listw3nn, model = "random", lag = TRUE, spatial.error = "none")
+preg1_re <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, index = c("indicator", "year"), listw = listw6nn, model = "random", lag = TRUE, spatial.error = "none")
 
 summary(preg1_fe_ind)
 summary(preg1_fe_time)
@@ -461,30 +451,30 @@ lr_stat_time_fe > qchisq(0.999, 7)
 
 $H_{0}:$ No random effect, no spatial autocorrelation
 ```{r}
-bsktest(formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, index = c("城市shapefile", "year"), test = "LMH")
+bsktest(formula0, data = tlaged_logged_ct_spdata_long, listw = listw6nn, index = c("城市shapefile", "year"), test = "LMH")
 ```
 $H_{0}:$ spatial autocorrelation
 ```{r}
-bsktest(formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, index = c("城市shapefile", "year"), test = "CLMlambda")
+bsktest(formula0, data = tlaged_logged_ct_spdata_long, listw = listw6nn, index = c("城市shapefile", "year"), test = "CLMlambda")
 ```
 $H_{0}:$ random effect
 ```{r}
-bsktest(formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, index = c("城市shapefile", "year"), test = "CLMmu")
+bsktest(formula0, data = tlaged_logged_ct_spdata_long, listw = listw6nn, index = c("城市shapefile", "year"), test = "CLMmu")
 ```
 
 ### Test between fixed effects model and random effect model (Hausman test)
 
 ```{r}
 ## $H_{0}:$ The preferred model is Random Effect
-sphtest(x = formula_nosplag, data = tlaged_logged_ct_spdata_long, listw = listw3nn, index = c("城市shapefile", "year"), spatial.model = "lag", method = "ML")
+sphtest(x = formula_nosplag, data = tlaged_logged_ct_spdata_long, listw = listw6nn, index = c("城市shapefile", "year"), spatial.model = "lag", method = "ML")
 ```
 
 1. These tests are panel versions of the LM test for spatial dependence of Anselin (1996).
 ```{r}
-slmtest(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, index = c("城市shapefile", "year"), model = "within", test = "lme")
+slmtest(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw6nn, index = c("indicator", "year"), model = "within", test = "lme")
 ```
 ```{r}
-slmtest(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw3nn, index = c("城市shapefile", "year"), model = "within", test = "lml")
+slmtest(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw6nn, index = c("indicator", "year"), model = "within", test = "lml")
 ```
 
 This points us to the spatial lag model.
@@ -492,7 +482,6 @@ This points us to the spatial lag model.
 ### Test for normality, serial dependence, and homoskedasticity
 
 ```{r}
-# rearrange data so that they are stacked as [city1,...,city283 ] in year 1, then  [city1,...,city283 ] in year 2 ...
 ## import and wrange regression results data
 results <- read.xlsx("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/results.xlsx", 1) %>% data.table::transpose(make.names = "OriginalVariableNames") %>% mutate(城市shapefile =tlaged_logged_ct_spdata_long$城市shapefile, indicator = tlaged_logged_ct_spdata_long$indicator, year = tlaged_logged_ct_spdata_long$year) %>% select(c("indicator", "城市shapefile", "year", "y", "yhat", "resid")) 
 
@@ -503,17 +492,22 @@ results[c("y", "yhat", "resid")] <- map(results[c("y", "yhat", "resid")], as.num
 str(results)
 
 ## check we did it correct
-sum(results$y - stacked_tlaged_logged_ct_spdata_long$tarl) # should be basically 0, up to some rounding error
-str(results)
+sum(results$y - tlaged_logged_ct_spdata_long$tarl) # should be basically 0, up to some rounding error
 
 ## add spatial information
-ct_spdata_long_result_auged <- left_join(ct_spdata_long, results, by = c("indicator", "year"))
+# ct_spdata_long_result_auged <- left_join(ct_spdata_long, results, by = c("indicator", "year"))
 
 ## To test for normality, we need to first standardize the redisuals
 results <- results %>% mutate(standized_resid = resid / sd(resid))
 ## kdensity plot of the redisual
+data <- data.frame(x = rnorm(300))
 resid_plot <- ggplot(data = results, aes(x = standized_resid)) + 
-  geom_density() 
+  stat_function(fun = dnorm,
+                args = list(mean = mean(data$x),
+                            sd = sd(data$x)),
+                col = "#1b98e0",
+                size = 0.5) + 
+   geom_density()
 resid_plot
 ## Q-Q plot
 qq_residuals <- ggplot() +
@@ -549,7 +543,7 @@ p4 <- gridExtra::grid.arrange(
 ser_corr <- vector("list", length(283))
 cities_names <- ct_spdata_wide[["城市shapefile"]]
 for (i in 1:283){
-  ser_corr[[i]] <- (results %>% filter(城市shapefile == cities_names[[i]]) %>% select(resid) %>% unlist() %>% EnvStats::serialCorrelationTest(test="AR1.yw") )$p.value
+  ser_corr[[i]] <- (results %>% filter(城市shapefile == cities_names[[i]]) %>% select(resid) %>% unlist() %>% EnvStats::serialCorrelationTest(test="rank.von.Neumann"))$p.value
 }
 
 mean(ser_corr < 0.1)
@@ -558,7 +552,7 @@ mean(ser_corr < 0.1)
 ### lm test for spatial correlation in the residual
 
 ```{r}
-slmtest(resid ~ 1, data = ct_spdata_long_result_auged, listw = listw3nn, index = c("indicator", "year"), model="pooling", test = "lml")
+slmtest(resid ~ 1, data = results, listw = listw6nn, index = c("indicator", "year"), model="pooling", test = "lml")
 ```
 
 ### Breusch-Pagan test for homoskedasticity
@@ -567,7 +561,7 @@ BPtest <- plm(resid ~ yhat, data = results, model = "pooling")
 summary(BPtest)
 
 ## visual test 
-results <- results %>% mutate(srqt_standized_resid = sqrt(standized_resid))
+results <- results %>% mutate(srqt_standized_resid = sqrt(abs(standized_resid)))
 
 hmsk_plot <- results %>% as.data.frame() %>% ggplot(aes(yhat, srqt_standized_resid)) +
     geom_point() +
@@ -586,7 +580,7 @@ BP_stat > qchisq(0.99, 1)
 ### LR test for spatial lag independent variables
 ```{r}
 ## Calculate likelihood ratio test statistics for individaul fe
-lr_stat_slag_indep <- 2 * (preg0$logLik - preg0_nosplag$logLik)
+lr_stat_slag_indep <- 2 * (preg0$logLik - preg_nonspatial$logLik)
 lr_stat_slag_indep
 ## Find chi-squared critical value for 10 degrees of freedom
 qchisq(0.99, 10)
@@ -605,21 +599,21 @@ sphtest(preg1_fe, preg1_re)
 ### LR test for two regimes
 ```{r}
 ## Calculate likelihood ratio test statistics for two regimes
-lr_stat_two_regime <- 2 * (1411.6477 - 1396.5096)
-lr_stat_two_regime
+#lr_stat_two_regime <- 2 * (1411.6477 - 1396.5096)
+#lr_stat_two_regime
 ## Find chi-squared critical value for 10 degrees of freedom
-qchisq(0.99, 2)
+#qchisq(0.99, 2)
 ## Test if likelihood ratio test statistic is greater than critical value
-lr_stat_two_regime > qchisq(0.99, 2)
+#lr_stat_two_regime > qchisq(0.99, 2)
 ## Calculate p-value of test
-1 - pchisq(lr_stat_two_regime, 2)
+#1 - pchisq(lr_stat_two_regime, 2)
 ```
 
 
 
 ## effects
 ```{r}
-spatialreg::impacts(preg1_fe, listw = listw3nn, time = 8)
+#spatialreg::impacts(preg1_fe, listw = listw3nn, time = 8)
 ```
 
 ## Summary

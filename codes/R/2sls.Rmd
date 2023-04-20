@@ -200,43 +200,43 @@ splag <- function(x, n, t, w){
   wx
 }
   
-ct_spdata_long$lagtarl = splag(x = ct_spdata_long$tarl, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lagGDPpc = splag(x = ct_spdata_long$GDPpc, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lagslry = splag(x = ct_spdata_long$slry, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lagtarl = splag(x = ct_spdata_long$tarl, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lagpop = splag(x = ct_spdata_long$pop, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lagterti = splag(x = ct_spdata_long$terti, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$laginvest = splag(x = ct_spdata_long$invest, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lagtaxi = splag(x = ct_spdata_long$taxi, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$laghotel = splag(x = ct_spdata_long$hotel, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lagspot5A = splag(x = ct_spdata_long$spot5A, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$laggrnld = splag(x = ct_spdata_long$grnld, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lagavexp = splag(x = ct_spdata_long$tavexp, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lagtarl = splag(x = ct_spdata_long$tarl, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lagGDPpc = splag(x = ct_spdata_long$GDPpc, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lagslry = splag(x = ct_spdata_long$slry, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lagtarl = splag(x = ct_spdata_long$tarl, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lagpop = splag(x = ct_spdata_long$pop, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lagterti = splag(x = ct_spdata_long$terti, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$laginvest = splag(x = ct_spdata_long$invest, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lagtaxi = splag(x = ct_spdata_long$taxi, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$laghotel = splag(x = ct_spdata_long$hotel, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lagspot5A = splag(x = ct_spdata_long$spot5A, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$laggrnld = splag(x = ct_spdata_long$grnld, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lagavexp = splag(x = ct_spdata_long$tavexp, n = 283, t = 9, w = matrix6nn)
 
 ```
 
 ```{r}
 ## Create second order spatial lag for ind variables
 
-ct_spdata_long$lag2tarl = splag(x = ct_spdata_long$lagtarl, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lag2GDPpc = splag(x = ct_spdata_long$lagGDPpc, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lag2slry = splag(x = ct_spdata_long$lagslry, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lag2tarl = splag(x = ct_spdata_long$lagtarl, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lag2pop = splag(x = ct_spdata_long$lagpop, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lag2terti = splag(x = ct_spdata_long$lagterti, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lag2invest = splag(x = ct_spdata_long$laginvest, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lag2taxi = splag(x = ct_spdata_long$lagtaxi, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lag2hotel = splag(x = ct_spdata_long$laghotel, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lag2spot5A = splag(x = ct_spdata_long$lagspot5A, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lag2grnld = splag(x = ct_spdata_long$laggrnld, n = 283, t = 9, w = matrix3nn)
-ct_spdata_long$lag2avexp = splag(x = ct_spdata_long$lagavexp, n = 283, t = 9, w = matrix3nn)
+ct_spdata_long$lag2tarl = splag(x = ct_spdata_long$lagtarl, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lag2GDPpc = splag(x = ct_spdata_long$lagGDPpc, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lag2slry = splag(x = ct_spdata_long$lagslry, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lag2tarl = splag(x = ct_spdata_long$lagtarl, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lag2pop = splag(x = ct_spdata_long$lagpop, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lag2terti = splag(x = ct_spdata_long$lagterti, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lag2invest = splag(x = ct_spdata_long$laginvest, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lag2taxi = splag(x = ct_spdata_long$lagtaxi, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lag2hotel = splag(x = ct_spdata_long$laghotel, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lag2spot5A = splag(x = ct_spdata_long$lagspot5A, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lag2grnld = splag(x = ct_spdata_long$laggrnld, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lag2avexp = splag(x = ct_spdata_long$lagavexp, n = 283, t = 9, w = matrix6nn)
 
 ```
 
 
 ## Use time lag, log transform.
 ```{r}
-panel_ct_spdata_long <- ct_spdata_long %>% pdata.frame(index = c("城市shapefile", "year"))
+panel_ct_spdata_long <- ct_spdata_long %>% pdata.frame(index = c("indicator", "year"))
 panel_tlaged_logged_ct_spdata_long <- panel_ct_spdata_long
 
 ## Use the independent variables from the previous year
@@ -438,9 +438,7 @@ plm(formula = test, index= c("indicator", "year"), data = tlaged_logged_ct_spdat
 But that result is not reliable. Our 2sls result is suffering from weak IV bias.The F-statistic for the regression of `Dtral5gdp` on the excluded instruments is only $5.11392$ and a negative adjusted R-square - they should be interpreted as $0$. ($5.49777$ F-statistic and also negative adjusted R-square for `neDtral5gdp`) .
 
 ```{r}
-first_stage <- plm(formula = neDtralgdp ~ lag2GDPpc + lag2slry + lag2pop + lag2terti + 
-    lag2invest + lag2taxi + lag2hotel + lag2spot5A + lag2grnld + 
-    lag2avexp, data = tlaged_logged_ct_spdata_long, effect = "twoway", 
+first_stage <- plm(formula = neDtralgdp ~  lag2GDPpc + lag2slry + lag2pop + lag2terti + lag2invest + lag2taxi + lag2hotel + lag2spot5A + lag2grnld + lag2avexp, data = tlaged_logged_ct_spdata_long, effect = "twoway", 
     model = "within", index = c("城市shapefile", "year"))
 summary(first_stage)
 ```
