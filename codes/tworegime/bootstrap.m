@@ -1,9 +1,10 @@
 clear;
+tic
 % Read data
-optsData = detectImportOptions('tlaged_logged_ct_spdata_long.xlsx');
-preview('tlaged_logged_ct_spdata_long.xlsx',optsData);
-optsData.SelectedVariableNames = [8:59];
-A = readmatrix('tlaged_logged_ct_spdata_long.xlsx',optsData);
+optsData = detectImportOptions('tlaged_ct_spdata_long.xlsx');
+preview('tlaged_ct_spdata_long.xlsx',optsData);
+optsData.SelectedVariableNames = [8:57];
+A = readmatrix('tlaged_ct_spdata_long.xlsx',optsData);
 % Read weighting matrices
 W6nn = readmatrix('6nnmatrix.xlsx','Range','B2:JX284');
 W = W6nn;
@@ -55,7 +56,7 @@ for i = 1:nBootstrap
 
     % Perform estimation
     y=stackedData(:,1); % column number in the data matrix that corresponds to the dependent variable
-    dum=stackedData(:,41); % column number in the data matrix that corresponds to the regime indicator
+    dum=stackedData(:,40); % column number in the data matrix that corresponds to the regime indicator
     xh=stackedData(:,[11,12,13,16,17,20,21,22,25,26]);% column numbers in the data matrix that correspond to the independent variables, no constant because it will be eliminated
 
     % Create wx variables
@@ -82,3 +83,4 @@ bootCoefsCov = cov(bootCoefs);
 bootCoefsVar = diag(bootCoefsCov)
 % Take the sqaure root to obtain the standard errors
 bootCoefsSE = sqrt(bootCoefsVar)
+toc

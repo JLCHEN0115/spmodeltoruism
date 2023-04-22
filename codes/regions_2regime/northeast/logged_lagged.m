@@ -20,15 +20,15 @@ optsData.SelectedVariableNames = [8:61];
 A = readmatrix('tlaged_northeast_spdata_long.xlsx',optsData);
 % Read weighting matrices
 % W3nn = readmatrix('3nnmatrix.xlsx','Range','B2:AG33');
-% W4nn = readmatrix('4nnmatrix.xlsx','Range','B2:AG33');
+ W4nn = readmatrix('4nnmatrix.xlsx','Range','B2:AG33');
 % W5nn = readmatrix('5nnmatrix.xlsx','Range','B2:AG33');
- W6nn = readmatrix('6nnmatrix.xlsx','Range','B2:AG33');
+% W6nn = readmatrix('6nnmatrix.xlsx','Range','B2:AG33');
 % Wcont = readmatrix('contmatrix.xlsx','Range','B2:AG33');
 % Wd100nb = readmatrix('d100nbmatrix.xlsx','Range','B2:AG33');
 % Wd150nb = readmatrix('d150nbmatrix.xlsx','Range','B2:AG33');
 % Wd200nb = readmatrix('d200nbmatrix.xlsx','Range','B2:AG33');
 
-W = W6nn;
+W = W4nn;
 
 % Model parameters and y and x variables
 % number of units
@@ -59,8 +59,8 @@ vnames=char('total arrivals','dum','GDPpc','salary','population','third industry
 prt_spreg(results,vnames,1);
 
 % results for the restricted model
-% x2 = [xh W3nnx];
-% results2 = sar_panel_FE(y,x2,W3nn,T,info);
+% x2 = [xh Wx];
+% results2 = sar_panel_FE(y,x2,W,T,info);
 % vnames2 = char('total arrivals','GDPpc','salary','population','third industry','investment','taxi','hotel','5A spots','green land','average expense','lagGDPpc','lagslry','lagpop','lagteri','laginvest','lagtaxi','laghotel','lagspot5A','laggrnld','lagavexp');
 % prt_sp(results2,vnames2,1);
 % convert the structure to a table

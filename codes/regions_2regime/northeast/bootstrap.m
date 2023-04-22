@@ -1,14 +1,16 @@
 clear;
+warning('off');
+tic
 % Read data
-optsData = detectImportOptions('tlaged_logged_ct_spdata_long.xlsx');
-preview('tlaged_logged_ct_spdata_long.xlsx',optsData);
-optsData.SelectedVariableNames = [8:59];
-A = readmatrix('tlaged_logged_ct_spdata_long.xlsx',optsData);
+optsData = detectImportOptions('tlaged_northeast_spdata_long.xlsx');
+preview('tlaged_northeast_spdata_long.xlsx',optsData);
+optsData.SelectedVariableNames = [8:61];
+A = readmatrix('tlaged_northeast_spdata_long.xlsx',optsData);
 % Read weighting matrices
-W6nn = readmatrix('6nnmatrix.xlsx','Range','B2:JX284');
-W = W6nn;
+ W4nn = readmatrix('4nnmatrix.xlsx','Range','B2:AG33');
+W = W4nn;
 % number of units
-N=283;
+N=32;
 % time periods
 T=8;
 % Model parameters and y and x variables
@@ -17,7 +19,7 @@ nobs=N*T;
 % including lagged x (if any)
 K=20;
 % the time of bootstrap
-nBootstrap = 1000;
+nBootstrap = 100;
 
 % Initialize a matrix to store the stacked data
 stackedData = zeros(N*T,size(A,2));
@@ -27,8 +29,8 @@ weight = zeros(N,N);
 
 bootCoefs = zeros(nBootstrap, 23); % Matrix to store bootstrapped coefficients
 
-
-for i = 1:nBootstrap
+counter = 1;
+while counter <= nBootstrap
 
     % Select cities randomly with replacement
     selectedCities = datasample(1:N, N, 'Replace', true);
@@ -55,7 +57,7 @@ for i = 1:nBootstrap
 
     % Perform estimation
     y=stackedData(:,1); % column number in the data matrix that corresponds to the dependent variable
-    dum=stackedData(:,41); % column number in the data matrix that corresponds to the regime indicator
+    dum=stackedData(:,42); % column number in the data matrix that corresponds to the regime indicator
     xh=stackedData(:,[11,12,13,16,17,20,21,22,25,26]);% column numbers in the data matrix that correspond to the independent variables, no constant because it will be eliminated
 
     % Create wx variables
@@ -71,14 +73,18 @@ for i = 1:nBootstrap
     info.model=3;
     results = sarregime_panel(y,x,dum,weight,T,info);
     coefficients = [results.beta ; results.rho];
-    
+    if anynan(coefficients)
+        continue
+    end
     % Store the estimated coefficients in the bootstrapped coefficients matrix
-    bootCoefs(i,:) = coefficients;
+    bootCoefs(counter,:) = coefficients;
+    counter = counter + 1;
 end
 
 % calculate the variance-covariance matrix of the bootstraped coefficients
 bootCoefsCov = cov(bootCoefs);
 % Extract the diagonal elements (variance)
-bootCoefsVar = diag(bootCoefsCov)
+bootCoefsVar = diag(bootCoefsCov);
 % Take the sqaure root to obtain the standard errors
-bootCoefsSE = sqrt(bootCoefsVar)
+bootCoefsSE = sqrt(bootCoefsVar);
+toc
