@@ -77,12 +77,14 @@ ct_spdata_long %<>%
 sum(is.na(ct_spdata_long))
 ## rearrange the rows
 ct_spdata_long %<>% arrange(year, indicator)
-## check they are in the right position. Important!
+
+## Important!
+## check they are in the right position.
 identical(ct_spdata_wide$城市shapefile,( ct_spdata_long %>% filter(year == 2011))$城市shapefile)
 
 ## panel
 ## CAUTION: panel structure will mess things up when calculating Moran's I
-panel_ct_spdata_long <- pdata.frame(ct_spdata_long, index = c("城市shapefile", "year"))
+panel_ct_spdata_long <- pdata.frame(ct_spdata_long, index = c("indicator", "year"))
 ## summarize the data
 summary(ct_spdata_long)
 ```
@@ -181,10 +183,10 @@ d200nb %>% spdep::nb2mat(zero.policy = TRUE) -> matrixd200nb
 
 ```{r}
 ## Create another weighting matrix based on contiguity relations (queen).
-ct_spdata_wide %>% spdep::poly2nb("geometry") %>% 
-  spdep::nb2mat(zero.policy = TRUE) -> matrixcont
+##ct_spdata_wide %>% spdep::poly2nb("geometry") %>% 
+##  spdep::nb2mat(zero.policy = TRUE) -> matrixcont
 
-ct_spdata_wide %>% spdep::poly2nb("geometry") %>%  spdep::nb2listw(zero.policy = TRUE) -> listwnb
+##ct_spdata_wide %>% spdep::poly2nb("geometry") %>%  spdep::nb2listw(zero.policy = TRUE) -> listwnb
 ```
 
 Create spatial lagged variables.
@@ -201,6 +203,7 @@ splag <- function(x, n, t, w){
 }
   
 ct_spdata_long$lagtarl = splag(x = ct_spdata_long$tarl, n = 283, t = 9, w = matrix6nn)
+ct_spdata_long$lagGDP = splag(x = ct_spdata_long$GDP, n = 283, t = 9, w = matrix6nn)
 ct_spdata_long$lagGDPpc = splag(x = ct_spdata_long$GDPpc, n = 283, t = 9, w = matrix6nn)
 ct_spdata_long$lagslry = splag(x = ct_spdata_long$slry, n = 283, t = 9, w = matrix6nn)
 ct_spdata_long$lagtarl = splag(x = ct_spdata_long$tarl, n = 283, t = 9, w = matrix6nn)
@@ -246,83 +249,24 @@ tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
      )
    )
 
-## Create indicators using GDP per capita
+## Create indicators using GDP 
 tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
    mutate(
      indicator_gdp = case_when(
+      GDP >= lagGDP ~  1,
+      GDP < lagGDP ~ 0
+     )
+   )
+
+## Create indicators using GDP per capita
+tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
+   mutate(
+     indicator_gdppc = case_when(
       GDPpc >= lagGDPpc ~  1,
       GDPpc < lagGDPpc ~ 0
      )
    )
 
-## percentage GDP gap
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(GDP_percent = (GDPpc - lagGDPpc) / lagGDPpc)
-
-summary(tlaged_ct_spdata_long$GDP_percent)
-
-## -10 prcent GDP
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(
-     indicator_gdpne10 = case_when(
-      GDP_percent >= -0.10 ~  1,
-      GDP_percent < -0.10 ~ 0
-     )
-   )
-
-## -5 prcent GDP
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(
-     indicator_gdpne5 = case_when(
-      GDP_percent >= -0.05 ~  1,
-      GDP_percent < -0.05 ~ 0
-     )
-   )
-
-## 5 prcent GDP
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(
-     indicator_gdpps5 = case_when(
-      GDP_percent >= 0.05 ~  1,
-      GDP_percent < 0.05 ~ 0
-     )
-   )
-
-## 10 prcent GDP
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(
-     indicator_gdpps10 = case_when(
-      GDP_percent >= 0.1 ~  1,
-      GDP_percent < 0.1 ~ 0
-     )
-   )
-
-## [-0.05, 0] percent GDP
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(
-     indicator_gdpne5to0 = case_when(
-      GDP_percent >= -0.05 & GDP_percent <= 0 ~  1,
-      GDP_percent < -0.05 | GDP_percent > 0  ~ 0
-     )
-   )
-
-## Create indicators using number of hotels
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(
-     indicator_hotel = case_when(
-      hotel >= laghotel ~  1,
-      hotel < laghotel ~ 0
-     )
-   )
-
-## Create indicators using number of 5A spots
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(
-     indicator_5A = case_when(
-      spot5A >= lagspot5A ~  1,
-      spot5A < lagspot5A ~ 0
-     )
-   )
 
 ## Create indicators using third industry development level
 tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%

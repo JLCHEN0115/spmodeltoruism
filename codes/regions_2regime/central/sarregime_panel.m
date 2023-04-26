@@ -196,6 +196,8 @@ e0 = ywith - xwith*b0;
 ed1 = wywith1 - xwith*bd1;
 ed2 = wywith2 - xwith*bd2;
 options = optimset('fminsearch');
+%options.MaxFunEvals = 100000;
+%options.MaxIter = 100000;
 rhos=[0;0];
 
 [rhos,liktmp,exitflag,output]= fminsearch('f_sar2_panel',rhos,options,index,W,e0,ed1,ed2,N,T);
@@ -305,7 +307,10 @@ parm = [beta;rhos;sige];
 bout= [beta;rhos];
 results.lik =f2_sar2_panel(parm,index,ywith,wywith1,wywith2,xwith,W,N,T);
 
-% step 5) Determine asymptotic t-stats based on information matrix
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% uncomment the following for non-bootstraped standard error
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% step 5a) Determine asymptotic t-stats based on information matrix
 xpx = zeros(nvar+3,nvar+3);
 ysum1=zeros(nvar,1);
 ysum2=zeros(nvar,1);
@@ -361,6 +366,25 @@ results.tstat = tmp;
 results.dif=rho1-rho2;
 covar=xpxi(nvar+1,nvar+1)+xpxi(nvar+2,nvar+2)-xpxi(nvar+1,nvar+2)-xpxi(nvar+2,nvar+1);
 results.tdif=results.dif/sqrt(covar);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% uncomment the following for bootstraped standard error
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% step 5b) Determine asymptotic t-stats based on bootstraped standard error
+%{
+% use cluster bootstraped se to account for serial correlation
+bootCoefsSE = readmatrix('bootCoefsSE.xlsx','Range','A1:A23');
+% tmp = bout./(sqrt(tmp));
+tmp = bout./(bootCoefsSE);
+results.tstat = tmp;
+
+% Regime differences
+results.dif=rho1-rho2;
+% use cluster bootstraped variance to account for serial correlation
+bootCoefsCov = readmatrix('bootCoefsCov.xlsx','Range','A1:W23');
+covar = bootCoefsCov(nvar+1,nvar+1)+bootCoefsCov(nvar+2,nvar+2)-bootCoefsCov(nvar+1,nvar+2)-bootCoefsCov(nvar+2,nvar+1);
+results.tdif=results.dif/sqrt(covar);
+%}
 
 % return stuff
 results.y = y;

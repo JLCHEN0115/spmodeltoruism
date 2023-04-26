@@ -307,8 +307,10 @@ parm = [beta;rhos;sige];
 bout= [beta;rhos];
 results.lik =f2_sar2_panel(parm,index,ywith,wywith1,wywith2,xwith,W,N,T);
 
-% step 5) Determine asymptotic t-stats based on information matrix
-%{
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% uncomment the following for non-bootstraped standard error
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% step 5a) Determine asymptotic t-stats based on information matrix
 xpx = zeros(nvar+3,nvar+3);
 ysum1=zeros(nvar,1);
 ysum2=zeros(nvar,1);
@@ -357,8 +359,19 @@ xpx(nvar+2,nvar+3) = ytr2;
 xpx(nvar+3,nvar+2) = ytr2;
 xpxi = xpx\eye(size(xpx));
 tmp = diag(xpxi(1:nvar+2,1:nvar+2));
-%}
+tmp = bout./(sqrt(tmp));
+results.tstat = tmp;
 
+% Regime differences
+results.dif=rho1-rho2;
+covar=xpxi(nvar+1,nvar+1)+xpxi(nvar+2,nvar+2)-xpxi(nvar+1,nvar+2)-xpxi(nvar+2,nvar+1);
+results.tdif=results.dif/sqrt(covar);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% uncomment the following for bootstraped standard error
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% step 5b) Determine asymptotic t-stats based on bootstraped standard error
+%{
 % use cluster bootstraped se to account for serial correlation
 bootCoefsSE = readmatrix('bootCoefsSE.xlsx','Range','A1:A23');
 % tmp = bout./(sqrt(tmp));
@@ -369,9 +382,9 @@ results.tstat = tmp;
 results.dif=rho1-rho2;
 % use cluster bootstraped variance to account for serial correlation
 bootCoefsCov = readmatrix('bootCoefsCov.xlsx','Range','A1:W23');
-%covar=xpxi(nvar+1,nvar+1)+xpxi(nvar+2,nvar+2)-xpxi(nvar+1,nvar+2)-xpxi(nvar+2,nvar+1);
 covar = bootCoefsCov(nvar+1,nvar+1)+bootCoefsCov(nvar+2,nvar+2)-bootCoefsCov(nvar+1,nvar+2)-bootCoefsCov(nvar+2,nvar+1);
 results.tdif=results.dif/sqrt(covar);
+%}
 
 % return stuff
 results.y = y;

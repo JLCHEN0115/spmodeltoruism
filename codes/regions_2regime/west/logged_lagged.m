@@ -14,16 +14,16 @@
 clear
 
 % Read data
-optsData = detectImportOptions('tlaged_logged_west_spdata_long.xlsx');
-preview('tlaged_logged_west_spdata_long.xlsx',optsData);
-optsData.SelectedVariableNames = [8:61];
-A = readmatrix('tlaged_logged_west_spdata_long.xlsx',optsData);
+optsData = detectImportOptions('tlaged_west_spdata_long.xlsx');
+preview('tlaged_west_spdata_long.xlsx',optsData);
+optsData.SelectedVariableNames = [8:52];
+A = readmatrix('tlaged_west_spdata_long.xlsx',optsData);
 % Read weighting matrices
- W4nn = readmatrix('4nnmatrix.xlsx','Range','B2:CH86');
+ W6nn = readmatrix('4nnmatrix.xlsx','Range','B2:CH86');
 % W5nn = readmatrix('5nnmatrix.xlsx','Range','B2:CH86');
 % W6nn = readmatrix('6nnmatrix.xlsx','Range','B2:CH86');
 
-W = W4nn;
+W = W6nn;
 
 % Model parameters and y and x variables
 % number of units
@@ -36,8 +36,8 @@ nobs=N*T;
 K=20;
 
 y=A(:,1); % column number in the data matrix that corresponds to the dependent variable
-dum=A(:,42); % column number in the data matrix that corresponds to the regime indicator
-xh=A(:,[11,12,13,16,17,20,21,22,25,26]);% column numbers in the data matrix that correspond to the independent variables, no constant because it will be eliminated
+dum=A(:,43); % column number in the data matrix that corresponds to the regime indicator
+xh=A(:,[12,13,14,17,18,21,22,23,26,27]);% column numbers in the data matrix that correspond to the independent variables, no constant because it will be eliminated
 % Create wx variables
 for t=1:T
     t1=1+(t-1)*N;t2=t*N;

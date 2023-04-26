@@ -14,7 +14,7 @@ clear all;
 *input data;
 import excel "/Users/jialiangchen/Documents/spmodeltoruism/data/database_ZL.xlsx", sheet("Sheet1") cellrange(A2:AT2567) firstrow;
 
-drop Prov ID CPI housingpriceRMBm2 BusinessVolume_Telecommunicatio-digcompany emp_culent gdp_ceic agent A_spot AL railway_length railway_number recreationalgreen parks baidu;
+drop Prov ID CPI housingpriceRMBm2 BusinessVolume_Telecommunicatio-digcompany emp_culent agent A_spot AL railway_length railway_number recreationalgreen parks baidu;
 
 rename (L CPIbenchmark2011 CPIprecedingyear100 ind AK) (rhprice CPIbenchmark CPIprecedingyear Tertiary Spot5A);
 
@@ -38,7 +38,7 @@ forvalues i = 2269(1)2277{;
 };
 
 
-reshape wide total_vistor total_tincome CPIprecedingyear CPIbenchmark emp_hotcat rhprice grp_per_ceic salary pop_CEIC area_CEIC road_CEIC Tertiary invest foreigncap bus taxi hotel Spot5A CNSA railway_station greencoverage, i(id_correct) j(year);
+reshape wide total_vistor total_tincome CPIprecedingyear CPIbenchmark emp_hotcat rhprice gdp_ceic grp_per_ceic salary pop_CEIC area_CEIC road_CEIC Tertiary invest foreigncap bus taxi hotel Spot5A CNSA railway_station greencoverage, i(id_correct) j(year);
 
 *drop city Bijie(245) and Tongren(246);
 drop if City == "Bijie" | City == "Tongren";

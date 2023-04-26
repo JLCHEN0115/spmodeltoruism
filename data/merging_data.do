@@ -37,7 +37,7 @@ drop mresult_location;
 order ID 城市 City Lat Long;
 
 *go to the long form;
-reshape long total_vistor total_tincome CPIprecedingyear CPIbenchmark emp_hotcat rhprice grp_per_ceic salary pop_CEIC area_CEIC road_CEIC Tertiary invest foreigncap bus taxi hotel Spot5A CNSA railway_station greencoverage domesticarrival dometric_rev inter_arrival inter_rev, i(ID) j(year);
+reshape long total_vistor total_tincome CPIprecedingyear CPIbenchmark emp_hotcat rhprice gdp_ceic grp_per_ceic salary pop_CEIC area_CEIC road_CEIC Tertiary invest foreigncap bus taxi hotel Spot5A CNSA railway_station greencoverage domesticarrival dometric_rev inter_arrival inter_rev, i(ID) j(year);
 
 
 *统一度量衡;

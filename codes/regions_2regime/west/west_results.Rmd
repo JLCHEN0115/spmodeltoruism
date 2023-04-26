@@ -201,6 +201,7 @@ splag <- function(x, n, t, w){
 }
   
 ct_spdata_long$lagtarl = splag(x = ct_spdata_long$tarl, n = 85, t = 9, w = matrix6nn)
+ct_spdata_long$lagGDP = splag(x = ct_spdata_long$GDP, n = 85, t = 9, w = matrix6nn)
 ct_spdata_long$lagGDPpc = splag(x = ct_spdata_long$GDPpc, n = 85, t = 9, w = matrix6nn)
 ct_spdata_long$lagslry = splag(x = ct_spdata_long$slry, n = 85, t = 9, w = matrix6nn)
 ct_spdata_long$lagtarl = splag(x = ct_spdata_long$tarl, n = 85, t = 9, w = matrix6nn)
@@ -212,7 +213,6 @@ ct_spdata_long$laghotel = splag(x = ct_spdata_long$hotel, n = 85, t = 9, w = mat
 ct_spdata_long$lagspot5A = splag(x = ct_spdata_long$spot5A, n = 85, t = 9, w = matrix6nn)
 ct_spdata_long$laggrnld = splag(x = ct_spdata_long$grnld, n = 85, t = 9, w = matrix6nn)
 ct_spdata_long$lagavexp = splag(x = ct_spdata_long$tavexp, n = 85, t = 9, w = matrix6nn)
-ct_spdata_long$lagtrev = splag(x = ct_spdata_long$trev, n = 85, t = 9, w = matrix6nn)
 ```
 
 ## Use time lagged independent variables.
@@ -237,15 +237,6 @@ summary(tlaged_ct_spdata_long)
 
 ## Create indicators using different variables
 ```{r}
-## Create indicators using revenues
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(
-     indicator_trev = case_when(
-      trev >= lagtrev ~  1,
-      trev < lagtrev ~ 0
-     )
-   )
-
 ## Create indicators using total arrivals
 tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
    mutate(
@@ -255,98 +246,24 @@ tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
      )
    )
 
-## percentage total arrivals
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(tarl_percent = (tarl - lagtarl) / lagtarl)
-
-summary(tlaged_ct_spdata_long$tarl_percent)
-
-## first quantile
+## Create indicators using GDP 
 tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
    mutate(
-     indicator_tarlne50 = case_when(
-      tarl_percent >= -0.5420 ~  1,
-      tarl_percent < -0.5420 ~ 0
-     )
-   )
-
-## third quantile
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(
-     indicator_tarlps10 = case_when(
-      tarl_percent >= 0.1166 ~  1,
-      tarl_percent < 0.1166 ~ 0
-     )
-   )
-
-## stars
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(
-     indicator_tarlstars = case_when(
-      tarl_percent >= 0.5 ~  1,
-      tarl_percent < 0.5 ~ 0
+     indicator_gdp = case_when(
+      GDP >= lagGDP ~  1,
+      GDP < lagGDP ~ 0
      )
    )
 
 ## Create indicators using GDP per capita
 tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
    mutate(
-     indicator_gdp = case_when(
+     indicator_gdppc = case_when(
       GDPpc >= lagGDPpc ~  1,
       GDPpc < lagGDPpc ~ 0
      )
    )
 
-## percentage GDP gap
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(GDP_percent = (GDPpc - lagGDPpc) / lagGDPpc)
-
-summary(tlaged_ct_spdata_long$GDP_percent)
-
-## first quantile
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(
-     indicator_gdpne30 = case_when(
-      GDP_percent >= -0.30478 ~  1,
-      GDP_percent < -0.30478 ~ 0
-     )
-   )
-
-## third quantile
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(
-     indicator_gdpps25 = case_when(
-      GDP_percent >= 0.24466 ~  1,
-      GDP_percent < 0.24466 ~ 0
-     )
-   )
-
-## stars
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(
-     indicator_gdpps50 = case_when(
-      GDP_percent >= 0.5 ~  1,
-      GDP_percent < 0.5 ~ 0
-     )
-   )
-
-## Create indicators using number of hotels
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(
-     indicator_hotel = case_when(
-      hotel >= laghotel ~  1,
-      hotel < laghotel ~ 0
-     )
-   )
-
-## Create indicators using number of 5A spots
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(
-     indicator_5A = case_when(
-      spot5A >= lagspot5A ~  1,
-      spot5A < lagspot5A ~ 0
-     )
-   )
 
 ## Create indicators using third industry development level
 tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
@@ -364,7 +281,13 @@ summary(tlaged_ct_spdata_long)
 ```{r}
 # check they are in the right position
 # important!!
-#identical(ct_spdata_wide$城市shapefile,(as.character(tlaged_logged_ct_spdata_long$城市shapefile))[1:85])
+location_test <- rep(FALSE, 8)
+
+for (i in 1:8){
+  location_test[[i]] <-   identical(ct_spdata_wide$城市shapefile,(as.character(tlaged_ct_spdata_long$城市shapefile))[(85*(i-1)+1):(85*i)])
+}
+
+location_test # should be 8 TRUEs
 
 # 
 #tlaged_ct_spdata_long %>%
