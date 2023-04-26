@@ -19,11 +19,11 @@ preview('tlaged_east_spdata_long.xlsx',optsData);
 optsData.SelectedVariableNames = [8:52];
 A = readmatrix('tlaged_east_spdata_long.xlsx',optsData);
 % Read weighting matrices
-% W4nn = readmatrix('4nnmatrix.xlsx','Range','B2:CI87');
+ W4nn = readmatrix('4nnmatrix.xlsx','Range','B2:CI87');
 % W5nn = readmatrix('5nnmatrix.xlsx','Range','B2:CI87');
- W6nn = readmatrix('6nnmatrix.xlsx','Range','B2:CI87');
+% W6nn = readmatrix('6nnmatrix.xlsx','Range','B2:CI87');
 
-W = W6nn;
+W = W4nn;
 
 % Model parameters and y and x variables
 % number of units
@@ -36,7 +36,7 @@ nobs=N*T;
 K=20;
 
 y=A(:,1); % column number in the data matrix that corresponds to the dependent variable
-dum=A(:,43); % column number in the data matrix that corresponds to the regime indicator
+dum=A(:,45); % column number in the data matrix that corresponds to the regime indicator
 xh=A(:,[12,13,14,17,18,21,22,23,26,27]);% column numbers in the data matrix that correspond to the independent variables, no constant because it will be eliminated
 % Create wx variables
 for t=1:T

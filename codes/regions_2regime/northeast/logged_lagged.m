@@ -41,7 +41,7 @@ nobs=N*T;
 K=20;
 
 y=A(:,1); % column number in the data matrix that corresponds to the dependent variable
-dum=A(:,45); % column number in the data matrix that corresponds to the regime indicator
+dum=A(:,42); % column number in the data matrix that corresponds to the regime indicator
 xh=A(:,[12,13,14,17,18,21,22,23,26,27]);% column numbers in the data matrix that correspond to the independent variables, no constant because it will be eliminated
 % Create wx variables
 for t=1:T
