@@ -493,10 +493,12 @@ for (i in 1:283){
 mean(ser_corr < 0.1)
 ```
 
-### lm test for spatial correlation in the residual
+### Moran's I test for spatial correlation in the residual
 
 ```{r}
-slmtest(resid ~ 1, data = results, listw = listw6nn, index = c("indicator", "year"), model="pooling", test = "lml")
+spdep::moran.test(
+  (results %>% filter(year == 2019))$resid
+  , listw6nn)
 ```
 
 ### Breusch-Pagan test for homoskedasticity
