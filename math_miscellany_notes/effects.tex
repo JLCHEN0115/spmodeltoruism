@@ -1,0 +1,135 @@
+\documentclass[11pt,a4paper]{amsart}
+\usepackage{setspace}
+\doublespacing
+\usepackage{amssymb,latexsym}
+\usepackage{graphicx}
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+\newtheorem{lemma}{Lemma}
+\newtheorem{axiom}{Axiom}
+\newtheorem{proposition}{Proposition}
+\usepackage{geometry}
+\geometry{a4paper,left=2cm,right=2cm,top=1cm,bottom=1cm}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+% \usepackage{ulem} % various underlines
+\usepackage{hyperref} % to insert URL 
+\usepackage{graphicx} % to insert illustration
+\usepackage[mathscr]{eucal} % to express a collection of sets
+\usepackage{bm} % bold font in equation environment
+\usepackage{color} % color some text
+\usepackage{framed} % to add a frame 
+\usepackage{tikz}
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+		\node[shape=circle,draw,inner sep=1pt] (char) {#1};}} % circled numbers
+\usepackage{float}%do not auto repositioning
+% $\uppercase\expandafter{\romannumeral1}$ Roman numeral
+%	\begin{figure}[hbt]
+	%{\centering \includegraphics[scale=0.78]{ring_algebra_semi}}
+	%\caption{ring \& algebra \& semi-}\label{F:ring_algebra_semi}
+	%\end{figure}
+%\usepackage[style=apa, eprint=false]{biblatex} %Imports biblatex package
+%\addbibresource{name_of_bib.bib} %Import the bibliography file
+	
+\begin{document}
+\title{Effects calculation}
+\date{\today}
+\maketitle
+
+Our regression equation is 
+\begin{equation}
+	y_{t} = \rho_{1} D_{t}Wy_{t} + \rho_{2}(I-D_{t})Wy_{t} + X_{t}\beta + WX_{t}\theta + \mu + \lambda_{t} + \epsilon_{t}, 
+\end{equation}
+where $t = 1,2, \dots, T$. 
+
+In this equation, $y_{t}$ is $n$-by-$1$ matrix for the outcomes, $\rho_{1}$ and $\rho_{2}$ are real numbers, $D_{t}$ is an $n$-by-$n$ diagonal matrix with diagonal elements equal the values of the binary variable for the corresponding location at time $t$, and $W$ is an $n$-by-$n$ weight matrix. $X_{t}$ is an $n$-by-$k$ matrix of explanatory variables, $\beta, \theta \in \mathbb{R}^{k}$, $\mu$ is an  $n$-by-$1$ matrix of individual fixed effects and $\lambda_{t}$ is an  $n$-by-$1$ constant matrix  for time fixed effects. Finally, $\epsilon_{t}$ is a  $n$-by-$1$ matrix for the error terms.
+
+The reduced form is 
+\begin{equation}\label{reduced}
+	\begin{aligned}
+			y_{t} &= (I-\rho_{1}D_{t}W-\rho_{2}(I-D_{t})W)^{-1}X_{t}\beta \\
+			&+  (I-\rho_{1}D_{t}W-\rho_{2}(I-D_{t})W)^{-1}WX_{t}\theta \\
+			&+  (I-\rho_{1}D_{t}W-\rho_{2}(I-D_{t})W)^{-1}(\mu + \lambda_{t} + \epsilon_{t}).
+	\end{aligned}
+\end{equation}
+
+Let $X_{t} = (x_{t1} \dots x_{tk})$, where $x_{t1}$, $\dots$, $x_{tk}$ are  column vectors of length $n$.  Also write out $\beta = (\beta_{1} \dots \beta_{k})'$, and $\theta = (\theta_{1} \dots \theta_{k})'$.
+
+With these notations, we can rewrite equation (\ref{reduced}) as 
+\begin{equation}
+	\begin{aligned}
+		y_{t} &= (I-\rho_{1}D_{t}W-\rho_{2}(I-D_{t})W)^{-1}(\beta_{1}x_{t1} + \beta_{2}x_{t2} + \dots + \beta_{k}x_{tk}) \\
+		&+  (I-\rho_{1}D_{t}W-\rho_{2}(I-D_{t})W)^{-1}W(\theta_{1}x_{t1} + \theta_{2}x_{t2} + \dots + \theta_{k}x_{tk}) \\
+		&+  (I-\rho_{1}D_{t}W-\rho_{2}(I-D_{t})W)^{-1}(\mu + \lambda_{t} + \epsilon_{t}).
+	\end{aligned}
+\end{equation}
+
+To get the effect of changing in $x_{tk}$ on $y_{t}$ (ceteris paribus), we take first order derivative of $y_{t}$ with respective to $x_{tk}$. Note that $y_{t} \in \mathbb{R}^{n}$ and $x_{tk} \in \mathbb{R}^{n}$, therefore this gives us a $n$-by-$n$ Jacobian matrix, as follows
+\begin{equation}
+	\begin{aligned}
+			J_{tk} &= \frac{\partial y_{t}}{\partial x_{tk}} \\
+		&= \frac{\partial [ (I-\rho_{1}D_{t}W-\rho_{2}(I-D_{t})W)^{-1}\beta_{k}x_{tk} + (I-\rho_{1}D_{t}W-\rho_{2}(I-D_{t})W)^{-1}W \theta_{k}x_{tk}]}{\partial x_{k}} \\
+		&=  \frac{\partial [[ (I-\rho_{1}D_{t}W-\rho_{2}(I-D_{t})W)^{-1}\beta_{k} + (I-\rho_{1}D_{t}W-\rho_{2}(I-D_{t})W)^{-1}W \theta_{k}]x_{tk}]}{\partial x_{k}} \\
+		&\stackrel{(\star)}{=} (I-\rho_{1}D_{t}W-\rho_{2}(I-D_{t})W)^{-1}\beta_{k} + (I-\rho_{1}D_{t}W-\rho_{2}(I-D_{t})W)^{-1}W \theta_{k} \\
+		&= (I-\rho_{1}D_{t}W-\rho_{2}(I-D_{t})W)^{-1}[\beta_{k} I + \theta_{k} W].
+	\end{aligned}
+\end{equation}
+
+Note that we dropped the $x_{j}$ terms with $j \ne k$ and also $\mu$, $\lambda$ and $\epsilon_{t}$ as these do not depend on $x_{k}$ and will be eliminated when taking the partial derivative with respect to $x_{k}$. 
+
+We now show that equation $(\star)$ is true. 
+
+\begin{proof}
+
+Denote $M =  (I-\rho_{1}D_{t}W-\rho_{2}(I-D_{t})W)^{-1}\beta_{k} + (I-\rho_{1}D_{t}W-\rho_{2}(I-D_{t})W)^{-1}W \theta_{k}$. $M$ is an $n$-by-$n$ matrix. Denotes the elements of $M$ by $m_{ij}$, for $i, j = 1, 2, \dots, n$. Then 
+\[	M = \begin{pmatrix}
+	m_{11} & m_{12} & \dots & m_{1n}\\
+	m_{21} & m_{22} & \dots & m_{2n}\\
+	\vdots & \vdots & \ddots & \vdots \\
+	m_{n1} & m_{n2} &\dots & m_{nn}
+\end{pmatrix}	\]
+
+and
+\[	Mx_{tk} = \begin{pmatrix}
+	\sum_{j=1}^{n} m_{1j}x_{tk}^{j} \\
+	\sum_{j=1}^{n} m_{2j}x_{tk}^{j} \\
+	\vdots\\
+	\sum_{j=1}^{n} m_{nj}x_{tk}^{j} 
+\end{pmatrix},	\]
+where $x_{tk}^{j}$ is the $j$-th element of the vector $x_{tk}$.
+
+It follows that 
+\[	J_{tk} = \frac{\partial M x_{tk}}{\partial x_{tk}} = \begin{pmatrix}
+	\frac{\partial \sum_{j=1}^{n} m_{1j}x_{tk}^{j} }{\partial x_{tk}^{1}} & 	\frac{\partial \sum_{j=1}^{n} m_{1j}x_{tk}^{j} }{\partial x_{tk}^{2}} & \dots &  	\frac{\partial \sum_{j=1}^{n} m_{1j}x_{tk}^{j} }{\partial x_{tk}^{n}} \\
+	\frac{\partial \sum_{j=1}^{n} m_{2j}x_{tk}^{j}}{\partial x_{tk}^{1}} & 	\frac{\partial \sum_{j=1}^{n} m_{2j}x_{tk}^{j}}{\partial x_{tk}^{2}} & \dots & 	\frac{\partial \sum_{j=1}^{n} m_{2j}x_{tk}^{j}}{\partial x_{tk}^{n}} \\
+	\vdots & \vdots & \ddots & \vdots \\
+	\frac{\partial \sum_{j=1}^{n} m_{nj}x_{tk}^{j}}{\partial x_{tk}^{1}} & \frac{\partial \sum_{j=1}^{n} m_{nj}x_{tk}^{j}}{\partial x_{tk}^{2}}  &  \dots & \frac{\partial \sum_{j=1}^{n} m_{nj}x_{tk}^{j}}{\partial x_{tk}^{n} }
+\end{pmatrix} =  \begin{pmatrix}
+m_{11} & m_{12} & \dots & m_{1n}\\
+m_{21} & m_{22} & \dots & m_{2n}\\
+\vdots & \vdots & \ddots & \vdots \\
+m_{n1} & m_{n2} &\dots & m_{nn}
+\end{pmatrix} = M.	\]
+
+This completes the proof of $(\star)$. 
+
+\end{proof}
+
+\vspace{10pt}
+
+$\bullet$ To calculate the direct effect of the change in $x_{tk}$ on $y_{t}$, we compute the quantity
+\[	E_{k}^{\text{direct}} = \frac{tr(J_{tk})}{N} = \frac{\sum_{i=1}^{n} m_{ii}}{n}.	\]
+
+
+\vspace{5pt}
+
+$\bullet$ To calculate the total effect of the change in $x_{tk}$ on $y_{t}$, we compute the quantity
+\[	E_{k}^{\text{total}} = \frac{\sum_{i=1}^{n} \sum_{j=1}^{n} m_{ij}}{n}.	\]
+
+$\bullet$ To calculate the total effect of the change in $x_{tk}$ on $y_{t}$, we compute the quantity
+\[	E_{k}^{\text{indirect}} =  	E_{k}^{\text{total}} - E_{k}^{\text{direct}}. \]
+
+%\printbibliography %Prints bibliography
+		
+\end{document}
