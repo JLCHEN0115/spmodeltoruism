@@ -19,11 +19,11 @@ preview('tlaged_east_spdata_long.xlsx',optsData);
 optsData.SelectedVariableNames = [8:52];
 A = readmatrix('tlaged_east_spdata_long.xlsx',optsData);
 % Read weighting matrices
- W4nn = readmatrix('4nnmatrix.xlsx','Range','B2:CI87');
+% W4nn = readmatrix('4nnmatrix.xlsx','Range','B2:CI87');
 % W5nn = readmatrix('5nnmatrix.xlsx','Range','B2:CI87');
-% W6nn = readmatrix('6nnmatrix.xlsx','Range','B2:CI87');
+ W6nn = readmatrix('6nnmatrix.xlsx','Range','B2:CI87');
 
-W = W4nn;
+W = W6nn;
 
 % Model parameters and y and x variables
 % number of units
@@ -33,11 +33,11 @@ T=8;
 nobs=N*T;
 % how many explanatory variables, exclusing the lagged y (if any), 
 % including lagged x (if any)
-K=20;
+K=14;
 
-y=A(:,1); % column number in the data matrix that corresponds to the dependent variable
-dum=A(:,45); % column number in the data matrix that corresponds to the regime indicator
-xh=A(:,[12,13,14,17,18,21,22,23,26,27]);% column numbers in the data matrix that correspond to the independent variables, no constant because it will be eliminated
+y=A(:,2); % column number in the data matrix that corresponds to the dependent variable
+dum=A(:,42); % column number in the data matrix that corresponds to the regime indicator
+xh=A(:,[12,14,18,21,22,23,26]);% column numbers in the data matrix that correspond to the independent variables, no constant because it will be eliminated
 % Create wx variables
 for t=1:T
     t1=1+(t-1)*N;t2=t*N;
@@ -50,7 +50,7 @@ Wx=log(1 + Wx);
 x=[dum xh Wx];
 info.model=3;
 results = sarregime_panel(y,x,dum,W,T,info);
-vnames=char('total arrivals','dum','GDPpc','salary','population','third industry','investment','taxi','hotel','5A spots','green land','average expense','lagGDPpc','lagslry','lagpop','lagteri','laginvest','lagtaxi','laghotel','lagspot5A','laggrnld','lagavexp');
+vnames=char('total revenue','dum','GDPpc','population','investment','taxi','hotel','5A spots','green land','lagGDPpc','lagpop','laginvest','lagtaxi','laghotel','lagspot5A','laggrnld');
 prt_spreg(results,vnames,1);
 
 % results for the restricted model
