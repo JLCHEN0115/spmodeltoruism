@@ -12,6 +12,7 @@ output: html_document
 Load the packages we will be using in this document.
 ```{r pkgs}
 ## Load and install the R packages we might will be using.
+rm(list=ls())
 pacman::p_load(sf, tidyverse, magrittr, data.table, hrbrthemes, zoo, GWmodel, spatialreg, spdep, plm, splm, pspatreg, zoo, chatgpt, xlsx, olsrr)
 ```
 
@@ -35,7 +36,11 @@ ct_spdata_wide %<>% arrange(城市shapefile)
 
 ct_spdata_wide$indicator = 1:86
 
-ct_spdata_wide %<>% select(indicator, everything())
+# unit = square kilometers
+ct_spdata_wide$Area <- ct_spdata_wide %>% st_area %>% (function(x) as.numeric(x)/1000000)
+
+ct_spdata_wide %<>% select(indicator, 城市shapefile, City, geometry, Lat, Long, Area, everything())
+
 
 ## Reshape our data to long(tidy) form.
 ct_spdata_long <- ct_spdata_wide %>% 
@@ -77,6 +82,29 @@ ct_spdata_long %<>%
 sum(is.na(ct_spdata_long))
 ## rearrange the rows
 ct_spdata_long %<>% arrange(year, indicator)
+
+## create tourism density variable
+ct_spdata_long$Density <- numeric(774)
+
+for (i in 1:9){
+  ct_spdata_long$Density[(86*(i-1)+1):(86*i)] <- 
+   ct_spdata_long$trev[(86*(i-1)+1):(86*i)] / (ct_spdata_long$Area[(86*(i-1)+1):(86*i)])
+}
+
+## create country mean density
+ct_spdata_long$Country_mean_dens <- numeric(774)
+
+for (i in 1:9){
+  ct_spdata_long$Country_mean_dens[(86*(i-1)+1):(86*i)] <- 
+   mean(ct_spdata_long$Density[(86*(i-1)+1):(86*i)])
+}
+
+# tourism density plot
+#ct_spdata_long %>% filter(year == 2015) %>% ggplot() +
+#    geom_sf(aes(fill = Density), alpha = 0.8, col = "white")+
+#    scale_fill_viridis_c(name = "Tourism Density")+ 
+#    ggtitle("Tourism density.")
+
 ## check they are in the right position. Important!
 identical(ct_spdata_wide$城市shapefile,( ct_spdata_long %>% filter(year == 2011))$城市shapefile)
 
@@ -213,6 +241,7 @@ ct_spdata_long$laghotel = splag(x = ct_spdata_long$hotel, n = 86, t = 9, w = mat
 ct_spdata_long$lagspot5A = splag(x = ct_spdata_long$spot5A, n = 86, t = 9, w = matrix6nn)
 ct_spdata_long$laggrnld = splag(x = ct_spdata_long$grnld, n = 86, t = 9, w = matrix6nn)
 ct_spdata_long$lagavexp = splag(x = ct_spdata_long$tavexp, n = 86, t = 9, w = matrix6nn)
+ct_spdata_long$lagdens = splag(x = ct_spdata_long$Density, n = 86, t = 9, w = matrix6nn)
 ```
 
 ## Use time lagged independent variables.
@@ -221,7 +250,7 @@ panel_ct_spdata_long <- ct_spdata_long %>% pdata.frame(index = c("城市shapefil
 panel_tlaged_ct_spdata_long <- panel_ct_spdata_long
 
 ## Use the independent variables from the previous year
-for (i in 8:ncol(panel_tlaged_ct_spdata_long)) {
+for (i in 9:ncol(panel_tlaged_ct_spdata_long)) {
   panel_tlaged_ct_spdata_long[[i]] <- as.numeric(lag(panel_tlaged_ct_spdata_long[[i]], 1))
 }
 
@@ -264,13 +293,21 @@ tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
      )
    )
 
-
-## Create indicators using third industry development level
+## Create indicators using Density, compared to neighbors
 tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
    mutate(
-     indicator_terti = case_when(
-      terti >= lagterti ~  1,
-      terti < lagterti ~ 0
+     indicator_dens_nb = case_when(
+      Density >= lagdens ~  1,
+      Density < lagdens ~ 0
+     )
+   )
+
+## Create indicators using Density, compared to country mean
+tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
+   mutate(
+     indicator_dens_mean = case_when(
+      Density >= Country_mean_dens ~  1,
+      Density < Country_mean_dens ~ 0
      )
    )
 

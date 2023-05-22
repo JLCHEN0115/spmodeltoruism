@@ -14,10 +14,10 @@
 clear
 
 % Read data
-optsData = detectImportOptions('tlaged_ct_spdata_long.xlsx');
-preview('tlaged_ct_spdata_long.xlsx',optsData);
-optsData.SelectedVariableNames = [8:52];
-A = readmatrix('tlaged_ct_spdata_long.xlsx',optsData);
+optsData = detectImportOptions('prod_tlaged_ct_spdata_long.xlsx');
+preview('prod_tlaged_ct_spdata_long.xlsx',optsData);
+optsData.SelectedVariableNames = [9:57];
+A = readmatrix('prod_tlaged_ct_spdata_long.xlsx',optsData);
 % Read weighting matrices
 % W4nn = readmatrix('4nnmatrix.xlsx','Range','B2:JX284');
 % W5nn = readmatrix('5nnmatrix.xlsx','Range','B2:JX284');
@@ -33,11 +33,11 @@ T=8;
 nobs=N*T;
 % how many explanatory variables, exclusing the lagged y (if any), 
 % including lagged x (if any)
-K=4;
+K=8;
 
 y=A(:,2); % column number in the data matrix that corresponds to the dependent variable
-dum=A(:,42); % column number in the data matrix that corresponds to the regime indicator
-xh=A(:,[10,18]); % column numbers in the data matrix that correspond to hotel employment and investment
+dum=A(:,45); % column number in the data matrix that corresponds to the regime indicator
+xh=A(:,[10,18,22,23]); % column numbers in the data matrix that correspond to hotel employment and investment
 % Create wx variables
 for t=1:T
     t1=1+(t-1)*N;t2=t*N;
@@ -45,12 +45,12 @@ for t=1:T
 end
 % log transformation
 y=log(1+y);
-xh=log(1 + xh);
-Wx=log(1 + Wx);
+xh=log(1+xh);
+Wx=log(1+Wx);
 x=[dum xh Wx];
 info.model=3;
 results = sarregime_panel(y,x,dum,W,T,info);
-vnames=char('total arrival','dum','emphotel','invest','lagemphotel','laginvest');
+vnames=char('total revenue','dum','emphotel','invest','hotel','spot5A','lagemphotel','laginvest','laghotel','lagspot5A');
 prt_spreg(results,vnames,1);
 
 % results for the restricted model
