@@ -106,7 +106,7 @@ for (i in 1:9){
 
 ## Important!
 ## check they are in the right position.
-identical(ct_spdata_wide$城市shapefile,( ct_spdata_long %>% filter(year == 2019))$城市shapefile)
+identical(ct_spdata_wide$城市shapefile,( ct_spdata_long %>% filter(year == 2013))$城市shapefile)
 
 ## panel
 ## CAUTION: panel structure will mess things up when calculating Moran's I
@@ -242,7 +242,7 @@ ct_spdata_long$lagspot5A = splag(x = ct_spdata_long$spot5A, n = 283, t = 9, w = 
 ct_spdata_long$laggrnld = splag(x = ct_spdata_long$grnld, n = 283, t = 9, w = matrix6nn)
 ct_spdata_long$lagavexp = splag(x = ct_spdata_long$tavexp, n = 283, t = 9, w = matrix6nn)
 ct_spdata_long$lagdens = splag(x = ct_spdata_long$Density, n = 283, t = 9, w = matrix6nn)
-
+ct_spdata_long$lagemphotel = splag(x = ct_spdata_long$emphotel, n = 283, t = 9, w = matrix6nn)
 ```
 
 ## Use time lag
@@ -339,42 +339,34 @@ location_test # should be 8 TRUEs
 ```{r}
 ## Transfer all variables to log scale
 tlaged_logged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-  mutate(across(c(tarl:inrev, hprice:road, invest:lagpop, laginvest:lagavexp), \(x) log(x+1)))
+  mutate(across(c(tarl:inrev, hprice:road, invest:lagpop, laginvest:lagavexp, lagemphotel), \(x) log(x+1)))
 
 ```
 
 ## Model tests
 
-1. **combo0**:
+1. 
 ```{r}
-formula0 <- tarl ~ GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagpop + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagavexp
-```
-
-2. **combo1**:
-
-remove population variable as they may not be significant.
-
-```{r}
-formula1 <- tarl ~ GDPpc + slry + terti + invest + taxi + hotel + spot5A + grnld + tavexp + lagGDPpc + lagslry + lagterti + laginvest + lagtaxi + laghotel + lagspot5A + laggrnld + lagavexp
+formula <- trev ~ emphotel + invest + hotel + spot5A + lagemphotel + laginvest + laghotel + lagspot5A
 ```
 
 3. **nosplag**:
 ```{r}
-formula_nosplag <- tarl ~ GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp 
+formula_nosplag <- trev ~ emphotel + invest + hotel + spot5A + lagemphotel + laginvest + laghotel + lagspot5A
 ```
 
 ## Panel regressions
 
 ### nonspatial pooled model
 ```{r}
-preg_nonspatial <- plm(formula = tarl ~ GDPpc + slry + pop + terti + invest + taxi + hotel + spot5A + grnld + tavexp, data = tlaged_logged_ct_spdata_long, index = c("indicator", "year"), model = "pooling")
+preg_nonspatial <- plm(formula, data = tlaged_logged_ct_spdata_long, index = c("indicator", "year"), model = "pooling")
 summary(preg_nonspatial)
 ```
 
 ### Maximum likelihood estimation, pooled, lag model
 
 ```{r}
-preg0 <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, index = c("indicator", "year"), listw = listw6nn, model = "pooling", lag = TRUE, spatial.error = "none")
+preg0 <- spml(formula = formula, data = tlaged_logged_ct_spdata_long, index = c("indicator", "year"), listw = listw6nn, model = "pooling", lag = TRUE, spatial.error = "none")
 
 summary(preg0)
 ```
@@ -383,20 +375,20 @@ summary(preg0)
 
 ```{r}
 ## FE individual
-preg1_fe_ind <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw6nn, model = "within", effect = "individual", lag = TRUE, spatial.error = "none", index = c("indicator", "year"))
+preg1_fe_ind <- spml(formula = formula, data = tlaged_logged_ct_spdata_long, listw = listw6nn, model = "within", effect = "individual", lag = TRUE, spatial.error = "none", index = c("indicator", "year"))
 
 ## FE time
-preg1_fe_time <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw6nn, model = "within", effect = "time", lag = TRUE, spatial.error = "none", index = c("indicator", "year"))
+preg1_fe_time <- spml(formula = formula, data = tlaged_logged_ct_spdata_long, listw = listw6nn, model = "within", effect = "time", lag = TRUE, spatial.error = "none", index = c("indicator", "year"))
 
 ## FE twoway
-preg1_fe <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw6nn, model = "within", effect = "twoway", lag = TRUE, spatial.error = "none", index = c("indicator", "year"))
+preg1_fe_twoway <- spml(formula = formula, data = tlaged_logged_ct_spdata_long, listw = listw6nn, model = "within", effect = "twoway", lag = TRUE, spatial.error = "none", index = c("indicator", "year"))
 
 ## see what if we estimate the random effect model
-preg1_re <- spml(formula = formula0, data = tlaged_logged_ct_spdata_long, index = c("indicator", "year"), listw = listw6nn, model = "random", lag = TRUE, spatial.error = "none")
+preg1_re <- spml(formula = formula, data = tlaged_logged_ct_spdata_long, index = c("indicator", "year"), listw = listw6nn, model = "random", lag = TRUE, spatial.error = "none")
 
 summary(preg1_fe_ind)
 summary(preg1_fe_time)
-summary(preg1_fe)
+summary(preg1_fe_twoway)
 summary(preg1_re)
 ```
 
@@ -428,32 +420,28 @@ lr_stat_time_fe > qchisq(0.999, 7)
 
 ### Test for spatial dependence
 
-$H_{0}:$ No random effect, no spatial autocorrelation
-```{r}
-bsktest(formula0, data = tlaged_logged_ct_spdata_long, listw = listw6nn, index = c("城市shapefile", "year"), test = "LMH")
-```
 $H_{0}:$ spatial autocorrelation
 ```{r}
-bsktest(formula0, data = tlaged_logged_ct_spdata_long, listw = listw6nn, index = c("城市shapefile", "year"), test = "CLMlambda")
+bsktest(formula, data = tlaged_logged_ct_spdata_long, listw = listw6nn, index = c("indicator", "year"), test = "CLMlambda")
 ```
 $H_{0}:$ random effect
 ```{r}
-bsktest(formula0, data = tlaged_logged_ct_spdata_long, listw = listw6nn, index = c("城市shapefile", "year"), test = "CLMmu")
+bsktest(formula, data = tlaged_logged_ct_spdata_long, listw = listw6nn, index = c("indicator", "year"), test = "CLMmu")
 ```
 
 ### Test between fixed effects model and random effect model (Hausman test)
 
 ```{r}
 ## $H_{0}:$ The preferred model is Random Effect
-sphtest(x = formula_nosplag, data = tlaged_logged_ct_spdata_long, listw = listw6nn, index = c("城市shapefile", "year"), spatial.model = "lag", method = "ML")
+sphtest(x = formula, data = tlaged_logged_ct_spdata_long, listw = listw6nn, index = c("indicator", "year"), spatial.model = "lag", method = "ML")
 ```
 
 1. These tests are panel versions of the LM test for spatial dependence of Anselin (1996).
 ```{r}
-slmtest(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw6nn, index = c("indicator", "year"), model = "within", test = "lme")
+slmtest(formula = formula, data = tlaged_logged_ct_spdata_long, listw = listw6nn, index = c("indicator", "year"), model = "within", test = "lme")
 ```
 ```{r}
-slmtest(formula = formula0, data = tlaged_logged_ct_spdata_long, listw = listw6nn, index = c("indicator", "year"), model = "within", test = "lml")
+slmtest(formula = formula, data = tlaged_logged_ct_spdata_long, listw = listw6nn, index = c("indicator", "year"), model = "within", test = "lml")
 ```
 
 This points us to the spatial lag model.
@@ -471,7 +459,7 @@ results[c("y", "yhat", "resid")] <- map(results[c("y", "yhat", "resid")], as.num
 str(results)
 
 ## check we did it correct
-sum(results$y - tlaged_logged_ct_spdata_long$tarl) # should be basically 0, up to some rounding error
+sum(results$y - tlaged_logged_ct_spdata_long$trev) # should be basically 0, up to some rounding error
 
 ## add spatial information
 # ct_spdata_long_result_auged <- left_join(ct_spdata_long, results, by = c("indicator", "year"))
@@ -551,9 +539,9 @@ hmsk_plot <- results %>% as.data.frame() %>% ggplot(aes(yhat, srqt_standized_res
 ## calculate the Breusch-Pagan test statistics
 BP_stat = 2264 * r.squared(BPtest)
 ## Find chi-squared critical value for 1 degree of freedom
-qchisq(0.99, 1)
+qchisq(0.95, 1)
 ## Test if likelihood ratio test statistic is greater than critical value
-BP_stat > qchisq(0.99, 1)
+BP_stat > qchisq(0.95, 1)
 ## Calculate p-value of test
 1 - pchisq(BP_stat, 1)
 ```
@@ -574,7 +562,7 @@ lr_stat_ind_fe > qchisq(0.99, 10)
 
 ### Hausman test
 ```{r}
-sphtest(preg1_fe, preg1_re)
+sphtest(preg1_fe_twoway, preg1_re)
 ## sphtest(preg2_fe, preg2_re)
 ```
 ### LR test for two regimes
