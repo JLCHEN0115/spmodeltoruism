@@ -251,9 +251,12 @@ panel_ct_spdata_long <- ct_spdata_long %>% pdata.frame(index = c("城市shapefil
 panel_tlaged_ct_spdata_long <- panel_ct_spdata_long
 
 ## Use the independent variables from the previous year
-for (i in 9:ncol(panel_tlaged_ct_spdata_long)) {
-  panel_tlaged_ct_spdata_long[[i]] <- as.numeric(lag(panel_tlaged_ct_spdata_long[[i]], 1))
-}
+#for (i in 15:ncol(panel_tlaged_ct_spdata_long)) {
+#  panel_tlaged_ct_spdata_long[[i]] <- as.numeric(lag(panel_tlaged_ct_spdata_long[[i]], 1))
+#}
+
+## Create a time lag y 
+panel_tlaged_ct_spdata_long$tlagtrev <- as.numeric(lag(panel_tlaged_ct_spdata_long$trev, 1))
 
 ## Drop all observations with missing values 
 panel_tlaged_ct_spdata_long <- panel_tlaged_ct_spdata_long %>% filter(!(year == 2011)) %>% arrange(year, indicator)
@@ -352,14 +355,14 @@ formula <- trev ~ emphotel + invest + hotel + spot5A + lagemphotel + laginvest +
 
 3. **nosplag**:
 ```{r}
-formula_nosplag <- trev ~ emphotel + invest + hotel + spot5A + lagemphotel + laginvest + laghotel + lagspot5A
+formula_nosplag <- trev ~ emphotel + invest + hotel + spot5A + tlagtrev
 ```
 
 ## Panel regressions
 
 ### nonspatial pooled model
 ```{r}
-preg_nonspatial <- plm(formula, data = tlaged_logged_ct_spdata_long, index = c("indicator", "year"), model = "pooling")
+preg_nonspatial <- plm(formula_nosplag, data = tlaged_logged_ct_spdata_long, index = c("indicator", "year"), model = "pooling")
 summary(preg_nonspatial)
 ```
 

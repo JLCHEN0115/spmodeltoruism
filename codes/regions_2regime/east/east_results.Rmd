@@ -242,6 +242,7 @@ ct_spdata_long$lagspot5A = splag(x = ct_spdata_long$spot5A, n = 86, t = 9, w = m
 ct_spdata_long$laggrnld = splag(x = ct_spdata_long$grnld, n = 86, t = 9, w = matrix6nn)
 ct_spdata_long$lagavexp = splag(x = ct_spdata_long$tavexp, n = 86, t = 9, w = matrix6nn)
 ct_spdata_long$lagdens = splag(x = ct_spdata_long$Density, n = 86, t = 9, w = matrix6nn)
+ct_spdata_long$lagemphotel = splag(x = ct_spdata_long$emphotel, n = 86, t = 9, w = matrix6nn)
 ```
 
 ## Use time lagged independent variables.
@@ -250,9 +251,12 @@ panel_ct_spdata_long <- ct_spdata_long %>% pdata.frame(index = c("城市shapefil
 panel_tlaged_ct_spdata_long <- panel_ct_spdata_long
 
 ## Use the independent variables from the previous year
-for (i in 9:ncol(panel_tlaged_ct_spdata_long)) {
-  panel_tlaged_ct_spdata_long[[i]] <- as.numeric(lag(panel_tlaged_ct_spdata_long[[i]], 1))
-}
+#for (i in 15:ncol(panel_tlaged_ct_spdata_long)) {
+#  panel_tlaged_ct_spdata_long[[i]] <- as.numeric(lag(panel_tlaged_ct_spdata_long[[i]], 1))
+#}
+
+## Create a time lag y 
+panel_tlaged_ct_spdata_long$tlagtrev <- as.numeric(lag(panel_tlaged_ct_spdata_long$trev, 1))
 
 ## Drop all observations with missing values 
 panel_tlaged_ct_spdata_long <- panel_tlaged_ct_spdata_long %>% filter(!(year == 2011)) %>% arrange(year, indicator)

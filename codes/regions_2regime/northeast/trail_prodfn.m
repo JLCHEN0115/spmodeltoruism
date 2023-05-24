@@ -14,10 +14,10 @@
 clear
 
 % Read data
-optsData = detectImportOptions('prod_tlaged_northeast_spdata_long.xlsx');
-preview('prod_tlaged_northeast_spdata_long.xlsx',optsData);
-optsData.SelectedVariableNames = [9:57];
-A = readmatrix('prod_tlaged_northeast_spdata_long.xlsx',optsData);
+optsData = detectImportOptions('tlagy_prod_tlaged_northeast_spdata_long.xlsx');
+preview('tlagy_prod_tlaged_northeast_spdata_long.xlsx',optsData);
+optsData.SelectedVariableNames = [9:59];
+A = readmatrix('tlagy_prod_tlaged_northeast_spdata_long.xlsx',optsData);
 % Read weighting matrices
 % W3nn = readmatrix('3nnmatrix.xlsx','Range','B2:AG33');
 % W4nn = readmatrix('4nnmatrix.xlsx','Range','B2:AG33');
@@ -41,8 +41,8 @@ nobs=N*T;
 K=8;
 
 y=A(:,2); % column number in the data matrix that corresponds to the dependent variable
-dum=A(:,49); % column number in the data matrix that corresponds to the regime indicator
-xh=A(:,[10,18,22,23]); % column numbers in the data matrix that correspond to hotel employment and investment
+dum=A(:,51); % column number in the data matrix that corresponds to the regime indicator
+xh=A(:,[10,18,22,23,46]); % column numbers in the data matrix that correspond to hotel employment and investment
 % Create wx variables
 for t=1:T
     t1=1+(t-1)*N;t2=t*N;
@@ -55,7 +55,7 @@ Wx=log(1 + Wx);
 x=[dum xh Wx];
 info.model=3;
 results = sarregime_panel(y,x,dum,W,T,info);
-vnames=char('total revenue','dum','emphotel','invest','hotel','spot5A','lagemphotel','laginvest','laghotel','lagspot5A');
+vnames=char('total revenue','dum','emphotel','invest','hotel','spot5A','tlagrev','lagemphotel','laginvest','laghotel','lagspot5A','stlagrev');
 prt_spreg(results,vnames,1);
 
 % results for the restricted model
