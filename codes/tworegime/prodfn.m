@@ -14,29 +14,30 @@
 clear
 
 % Read data
-optsData = detectImportOptions('tlagy_prod_tlaged_east_spdata_long.xlsx');
-preview('tlagy_prod_tlaged_east_spdata_long.xlsx',optsData);
-optsData.SelectedVariableNames = [9:59];
-A = readmatrix('tlagy_prod_tlaged_east_spdata_long.xlsx',optsData);
+optsData = detectImportOptions('ct_spdata_long.xlsx');
+preview('ct_spdata_long.xlsx',optsData);
+optsData.SelectedVariableNames = [9:65];
+A = readmatrix('ct_spdata_long.xlsx',optsData);
 % Read weighting matrices
-% W4nn = readmatrix('4nnmatrix.xlsx','Range','B2:CI87');
-% W5nn = readmatrix('5nnmatrix.xlsx','Range','B2:CI87');
- W6nn = readmatrix('6nnmatrix.xlsx','Range','B2:CI87');
- W = W6nn;
+% W4nn = readmatrix('4nnmatrix.xlsx','Range','B2:JX284');
+% W5nn = readmatrix('5nnmatrix.xlsx','Range','B2:JX284');
+ W6nn = readmatrix('6nnmatrix.xlsx','Range','B2:JX284');
+
+W = W6nn;
 
 % Model parameters and y and x variables
 % number of units
-N=86;
+N=283;
 % time periods
-T=8;
+T=9;
 nobs=N*T;
 % how many explanatory variables, exclusing the lagged y (if any), 
 % including lagged x (if any)
 K=8;
 
 y=A(:,2); % column number in the data matrix that corresponds to the dependent variable
-dum=A(:,51); % column number in the data matrix that corresponds to the regime indicator
-xh=A(:,[10,18,22,23,46]); % column numbers in the data matrix that correspond to hotel employment and investment
+dum=A(:,57); % column number in the data matrix that corresponds to the regime indicator
+xh=A(:,[10,18,22,23]); % column numbers in the data matrix that correspond to hotel employment and investment
 % Create wx variables
 for t=1:T
     t1=1+(t-1)*N;t2=t*N;
@@ -44,12 +45,12 @@ for t=1:T
 end
 % log transformation
 y=log(1+y);
-xh=log(1 + xh);
-Wx=log(1 + Wx);
+xh=log(1+xh);
+Wx=log(1+Wx);
 x=[dum xh Wx];
 info.model=3;
 results = sarregime_panel(y,x,dum,W,T,info);
-vnames=char('total revenue','dum','emphotel','invest','hotel','spot5A','tlagrev','lagemphotel','laginvest','laghotel','lagspot5A','stlagrev');
+vnames=char('total revenue','dum','emphotel','invest','hotel','spot5A','lagemphotel','laginvest','laghotel','lagspot5A');
 prt_spreg(results,vnames,1);
 
 % results for the restricted model

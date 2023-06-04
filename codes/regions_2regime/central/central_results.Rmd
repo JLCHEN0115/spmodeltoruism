@@ -92,11 +92,11 @@ for (i in 1:9){
    ct_spdata_long$trev[(80*(i-1)+1):(80*i)] / (ct_spdata_long$Area[(80*(i-1)+1):(80*i)])
 }
 
-## create country mean density
-ct_spdata_long$Country_mean_dens <- numeric(720)
+## create regional mean density
+ct_spdata_long$Region_mean_dens <- numeric(720)
 
 for (i in 1:9){
-  ct_spdata_long$Country_mean_dens[(80*(i-1)+1):(80*i)] <- 
+  ct_spdata_long$Region_mean_dens[(80*(i-1)+1):(80*i)] <- 
    mean(ct_spdata_long$Density[(80*(i-1)+1):(80*i)])
 }
 
@@ -111,7 +111,8 @@ identical(ct_spdata_wide$城市shapefile,( ct_spdata_long %>% filter(year == 201
 
 ## panel
 ## CAUTION: panel structure will mess things up when calculating Moran's I
-panel_ct_spdata_long <- pdata.frame(ct_spdata_long, index = c("城市shapefile", "year"))
+
+#panel_ct_spdata_long <- pdata.frame(ct_spdata_long, index = c("城市shapefile", "year"))
 ## summarize the data
 summary(ct_spdata_long)
 ```
@@ -196,16 +197,16 @@ listw3nn <- spdep::nb2listw(list3nn)
 ```
 
 ```{r}
-## Neighbourhood contiguity by distance
-d100nb <- dnearneigh(coords, 0, 100)
-d150nb <- dnearneigh(coords, 0, 150)
-d200nb <- dnearneigh(coords, 0, 200)
-summary(d200nb)
-
-## convert them to matrix
-d100nb %>% spdep::nb2mat(zero.policy = TRUE) -> matrixd100nb
-d150nb %>% spdep::nb2mat(zero.policy = TRUE) -> matrixd150nb
-d200nb %>% spdep::nb2mat(zero.policy = TRUE) -> matrixd200nb
+# ## Neighbourhood contiguity by distance
+# d100nb <- dnearneigh(coords, 0, 100)
+# d150nb <- dnearneigh(coords, 0, 150)
+# d200nb <- dnearneigh(coords, 0, 200)
+# summary(d200nb)
+# 
+# ## convert them to matrix
+# d100nb %>% spdep::nb2mat(zero.policy = TRUE) -> matrixd100nb
+# d150nb %>% spdep::nb2mat(zero.policy = TRUE) -> matrixd150nb
+# d200nb %>% spdep::nb2mat(zero.policy = TRUE) -> matrixd200nb
 ```
 
 ```{r}
@@ -272,7 +273,7 @@ summary(tlaged_ct_spdata_long)
 ## Create indicators using different variables
 ```{r}
 ## Create indicators using total arrivals
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
+ct_spdata_long <- ct_spdata_long %>%
    mutate(
      indicator_tarl = case_when(
       tarl >= lagtarl ~  1,
@@ -280,44 +281,115 @@ tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
      )
    )
 
-## Create indicators using GDP 
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
+## Create indicators using total arrivals, 60 percent
+ct_spdata_long <- ct_spdata_long %>%
    mutate(
-     indicator_gdp = case_when(
-      GDP >= lagGDP ~  1,
-      GDP < lagGDP ~ 0
+     indicator_tarl_60 = case_when(
+      (tarl - lagtarl)/tarl >= 0.6 ~  1,
+      (tarl - lagtarl)/tarl < 0.6 ~ 0
      )
    )
+
+## Create indicators using GDP 
+#ct_spdata_long <- ct_spdata_long %>%
+#   mutate(
+#     indicator_gdp = case_when(
+#      GDP >= lagGDP ~  1,
+#      GDP < lagGDP ~ 0
+#     )
+#   )
 
 ## Create indicators using GDP per capita
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(
-     indicator_gdppc = case_when(
-      GDPpc >= lagGDPpc ~  1,
-      GDPpc < lagGDPpc ~ 0
-     )
-   )
-
+# ct_spdata_long <- ct_spdata_long %>%
+#    mutate(
+#      indicator_gdppc = case_when(
+#       GDPpc >= lagGDPpc ~  1,
+#       GDPpc < lagGDPpc ~ 0
+#      )
+#    )
 
 ## Create indicators using Density, compared to neighbors
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
-   mutate(
-     indicator_dens_nb = case_when(
-      Density >= lagdens ~  1,
-      Density < lagdens ~ 0
-     )
-   )
+#ct_spdata_long <- ct_spdata_long %>%
+#   mutate(
+#     indicator_dens_nb = case_when(
+#      Density >= lagdens ~  1,
+#      Density < lagdens ~ 0
+#     )
+#   )
 
-## Create indicators using Density, compared to country mean
-tlaged_ct_spdata_long <- tlaged_ct_spdata_long %>%
+## Create indicators using Density, compared to regional mean
+ct_spdata_long <- ct_spdata_long %>%
    mutate(
      indicator_dens_mean = case_when(
-      Density >= Country_mean_dens ~  1,
-      Density < Country_mean_dens ~ 0
+      Density >= Region_mean_dens ~  1,
+      Density < Region_mean_dens ~ 0
      )
    )
 
-summary(tlaged_ct_spdata_long)
+## Create indicators using Density, compared to regional mean, 60 percent
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_dens_mean_60 = case_when(
+      (Density-Region_mean_dens)/Region_mean_dens >= 0.6 ~  1,
+      (Density-Region_mean_dens)/Region_mean_dens < 0.6 ~ 0
+     )
+   )
+
+## Create indicators using Density, compared to regional mean, 70 percent
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_dens_mean_70 = case_when(
+      (Density-Region_mean_dens)/Region_mean_dens >= 0.7 ~  1,
+      (Density-Region_mean_dens)/Region_mean_dens < 0.7 ~ 0
+     )
+   )
+
+## Create indicators using Density, compared to regional mean, 80 percent
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_dens_mean_80 = case_when(
+      (Density-Region_mean_dens)/Region_mean_dens >= 0.8 ~  1,
+      (Density-Region_mean_dens)/Region_mean_dens < 0.8 ~ 0
+     )
+   )
+
+## Crease indicators using hotel numbers
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_hotel = case_when(
+      hotel >= laghotel ~  1,
+      hotel < laghotel ~ 0
+     )
+   )
+
+## Crease indicators using hotel numbers, 60 percent
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_hotel_60 = case_when(
+      (hotel-laghotel)/laghotel >= 0.6 ~  1,
+      (hotel-laghotel)/laghotel < 0.6 ~ 0
+     )
+   )
+
+## Crease indicators using hotel numbers, 70 percent
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_hotel_70 = case_when(
+      (hotel-laghotel)/laghotel >= 0.7 ~  1,
+      (hotel-laghotel)/laghotel < 0.7 ~ 0
+     )
+   )
+
+## Crease indicators using hotel numbers, 80 percent
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_hotel_80 = case_when(
+      (hotel-laghotel)/laghotel >= 0.8 ~  1,
+      (hotel-laghotel)/laghotel < 0.8 ~ 0
+     )
+   )
+
+summary(ct_spdata_long)
 ```
 
 
@@ -327,16 +399,16 @@ summary(tlaged_ct_spdata_long)
 location_test <- rep(FALSE, 8)
 
 for (i in 1:8){
-  location_test[[i]] <-   identical(ct_spdata_wide$城市shapefile,(as.character(tlaged_ct_spdata_long$城市shapefile))[(80*(i-1)+1):(80*i)])
+  location_test[[i]] <-   identical(ct_spdata_wide$城市shapefile,(as.character(ct_spdata_long$城市shapefile))[(80*(i-1)+1):(80*i)])
 }
 
 location_test # should be 8 TRUEs
 
 # 
-#tlaged_ct_spdata_long %>%
+#ct_spdata_long %>%
 #        as.data.frame() %>%
 #        select(!geometry) %>%
-#      xlsx::write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/regions_2regime/central/tlaged_central_spdata_long.xlsx")
+#      xlsx::write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/regions_2regime/central/central_spdata_long.xlsx")
 #  
 #  ## output weight matrix (4nn)
 #  matrix4nn %>% as.data.frame() %>% write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/regions_2regime/central/4nnmatrix.xlsx")
