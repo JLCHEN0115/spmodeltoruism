@@ -279,6 +279,42 @@ ct_spdata_long <- ct_spdata_long %>%
      )
    )
 
+## Create indicators using total arrivals, 20 percent
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_tarl_20 = case_when(
+      (tarl - lagtarl)/tarl >= 0.2 ~  1,
+      (tarl - lagtarl)/tarl < 0.2 ~ 0
+     )
+   )
+
+## Create indicators using total arrivals, 30 percent
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_tarl_30 = case_when(
+      (tarl - lagtarl)/tarl >= 0.3 ~  1,
+      (tarl - lagtarl)/tarl < 0.3 ~ 0
+     )
+   )
+
+## Create indicators using total arrivals, 40 percent
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_tarl_40 = case_when(
+      (tarl - lagtarl)/tarl >= 0.4 ~  1,
+      (tarl - lagtarl)/tarl < 0.4 ~ 0
+     )
+   )
+
+## Create indicators using total arrivals, 50 percent
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_tarl_50 = case_when(
+      (tarl - lagtarl)/tarl >= 0.5 ~  1,
+      (tarl - lagtarl)/tarl < 0.5 ~ 0
+     )
+   )
+
 ## Create indicators using total arrivals, 60 percent
 ct_spdata_long <- ct_spdata_long %>%
    mutate(
@@ -306,40 +342,48 @@ ct_spdata_long <- ct_spdata_long %>%
      )
    )
 
-
-## Create indicators using GDP 
-#ct_spdata_long <- ct_spdata_long %>%
-#   mutate(
-#     indicator_gdp = case_when(
-#      GDP >= lagGDP ~  1,
-#      GDP < lagGDP ~ 0
-#     )
-#   )
-
-## Create indicators using GDP per capita
-# ct_spdata_long <- ct_spdata_long %>%
-#    mutate(
-#      indicator_gdppc = case_when(
-#       GDPpc >= lagGDPpc ~  1,
-#       GDPpc < lagGDPpc ~ 0
-#      )
-#    )
-
-## Create indicators using Density, compared to neighbors
-#ct_spdata_long <- ct_spdata_long %>%
-#   mutate(
-#     indicator_dens_nb = case_when(
-#      Density >= lagdens ~  1,
-#      Density < lagdens ~ 0
-#     )
-#   )
-
 ## Create indicators using Density, compared to country mean
 ct_spdata_long <- ct_spdata_long %>%
    mutate(
      indicator_dens_mean = case_when(
       Density >= Country_mean_dens ~  1,
       Density < Country_mean_dens ~ 0
+     )
+   )
+
+## Create indicators using Density, compared to country mean, 20 percent
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_dens_mean_20 = case_when(
+      (Density-Country_mean_dens)/Country_mean_dens >= 0.2 ~  1,
+      (Density-Country_mean_dens)/Country_mean_dens < 0.2 ~ 0
+     )
+   )
+
+## Create indicators using Density, compared to country mean, 30 percent
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_dens_mean_30 = case_when(
+      (Density-Country_mean_dens)/Country_mean_dens >= 0.3 ~  1,
+      (Density-Country_mean_dens)/Country_mean_dens < 0.3 ~ 0
+     )
+   )
+
+## Create indicators using Density, compared to country mean, 40 percent
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_dens_mean_40 = case_when(
+      (Density-Country_mean_dens)/Country_mean_dens >= 0.4 ~  1,
+      (Density-Country_mean_dens)/Country_mean_dens < 0.4 ~ 0
+     )
+   )
+
+## Create indicators using Density, compared to country mean, 50 percent
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_dens_mean_50 = case_when(
+      (Density-Country_mean_dens)/Country_mean_dens >= 0.5 ~  1,
+      (Density-Country_mean_dens)/Country_mean_dens < 0.5 ~ 0
      )
    )
 
@@ -379,6 +423,43 @@ ct_spdata_long <- ct_spdata_long %>%
      )
    )
 
+## Crease indicators using hotel numbers, 20 percent
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_hotel_20 = case_when(
+      (hotel-laghotel)/laghotel >= 0.2 ~  1,
+      (hotel-laghotel)/laghotel < 0.2 ~ 0
+     )
+   )
+
+## Crease indicators using hotel numbers, 30 percent
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_hotel_30 = case_when(
+      (hotel-laghotel)/laghotel >= 0.3 ~  1,
+      (hotel-laghotel)/laghotel < 0.3 ~ 0
+     )
+   )
+
+## Crease indicators using hotel numbers, 40 percent
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_hotel_40 = case_when(
+      (hotel-laghotel)/laghotel >= 0.4 ~  1,
+      (hotel-laghotel)/laghotel < 0.4 ~ 0
+     )
+   )
+
+## Crease indicators using hotel numbers, 50 percent
+ct_spdata_long <- ct_spdata_long %>%
+   mutate(
+     indicator_hotel_50 = case_when(
+      (hotel-laghotel)/laghotel >= 0.5 ~  1,
+      (hotel-laghotel)/laghotel < 0.5 ~ 0
+     )
+   )
+
+
 ## Crease indicators using hotel numbers, 60 percent
 ct_spdata_long <- ct_spdata_long %>%
    mutate(
@@ -413,9 +494,9 @@ summary(ct_spdata_long)
 ```{r}
 # check they are in the right position
 # important!!
-location_test <- rep(FALSE, 8)
+location_test <- rep(FALSE, 9)
 
-for (i in 1:8){
+for (i in 1:9){
   location_test[[i]] <-   identical(ct_spdata_wide$城市shapefile,(as.character(ct_spdata_long$城市shapefile))[(283*(i-1)+1):(283*i)])
 }
 
@@ -424,7 +505,7 @@ location_test # should be 8 TRUEs
 # ct_spdata_long %>%
 #        as.data.frame() %>%
 #        select(!geometry) %>%
-#      xlsx::write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/tlaged_ct_spdata_long.xlsx")
+#      xlsx::write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/ct_spdata_long.xlsx")
 
 #  ## output weight matrix (4nn)
 #  matrix4nn %>% as.data.frame() %>% write.xlsx2("/Users/jialiangchen/Documents/spmodeltoruism/codes/tworegime/4nnmatrix.xlsx")

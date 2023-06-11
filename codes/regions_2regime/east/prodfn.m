@@ -16,7 +16,7 @@ clear
 % Read data
 optsData = detectImportOptions('east_spdata_long.xlsx');
 preview('east_spdata_long.xlsx',optsData);
-optsData.SelectedVariableNames = [9:63];
+optsData.SelectedVariableNames = [9:77];
 A = readmatrix('east_spdata_long.xlsx',optsData);
 % Read weighting matrices
 % W4nn = readmatrix('4nnmatrix.xlsx','Range','B2:CI87');
@@ -35,7 +35,7 @@ nobs=N*T;
 K=8;
 
 y=A(:,2); % column number in the data matrix that corresponds to the dependent variable
-dum=A(:,55); % column number in the data matrix that corresponds to the regime indicator
+dum=A(:,67); % column number in the data matrix that corresponds to the regime indicator
 xh=A(:,[10,18,22,23]); % column numbers in the data matrix that correspond to hotel employment and investment
 % Create wx variables
 for t=1:T
